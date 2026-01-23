@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "811838786938",
+    "project_id": "arenaflow-2db49",
+    "storage_bucket": "arenaflow-2db49.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:811838786938:android:68adfbbc2920d3734f9ac3",
+        "android_client_info": {
+          "package_name": "com.example.arenaflow"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCCrLdIQlkjQsljoi3zYHhbmLHxDQK-1v4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
