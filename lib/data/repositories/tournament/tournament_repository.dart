@@ -57,21 +57,33 @@ class TournamentRepository {
   // Generate Bracket
   Future<void> generateBracket(String tournamentId, TournamentType type,
       List<String> teamIds) async {
+    // Fetch team names first
+    final teamNames = <String, String>{};
+    for (final teamId in teamIds) {
+      final teamDoc = await _firebaseService.getTeamDoc(teamId).get();
+      if (teamDoc.exists) {
+        final teamData = teamDoc.data() as Map<String, dynamic>;
+        teamNames[teamId] = teamData['name'] ?? teamId;
+      } else {
+        teamNames[teamId] = teamId;
+      }
+    }
+
     switch (type) {
       case TournamentType.singleElimination:
-        await _generateSingleEliminationBracket(tournamentId, teamIds);
+        await _generateSingleEliminationBracket(tournamentId, teamIds, teamNames);
         break;
       case TournamentType.doubleElimination:
-        await _generateDoubleEliminationBracket(tournamentId, teamIds);
+        await _generateDoubleEliminationBracket(tournamentId, teamIds, teamNames);
         break;
       case TournamentType.roundRobin:
-        await _generateRoundRobinBracket(tournamentId, teamIds);
+        await _generateRoundRobinBracket(tournamentId, teamIds, teamNames);
         break;
     }
   }
 
   Future<void> _generateSingleEliminationBracket(
-      String tournamentId, List<String> teamIds) async {
+      String tournamentId, List<String> teamIds, Map<String, String> teamNames) async {
     final shuffledTeams = List<String>.from(teamIds)..shuffle(Random());
     final totalTeams = shuffledTeams.length;
     final rounds = (log(totalTeams) / log(2)).ceil();
@@ -99,8 +111,8 @@ class TournamentRepository {
             'tournamentId': tournamentId,
             'team1Id': team1Id,
             'team2Id': team2Id,
-            'team1Name': '',
-            'team2Name': '',
+            'team1Name': teamNames[team1Id] ?? team1Id,
+            'team2Name': teamNames[team2Id] ?? team2Id,
             'team1Score': 0,
             'team2Score': 0,
             'round': round,
@@ -127,9 +139,9 @@ class TournamentRepository {
   }
 
   Future<void> _generateDoubleEliminationBracket(
-      String tournamentId, List<String> teamIds) async {
+      String tournamentId, List<String> teamIds, Map<String, String> teamNames) async {
     // Winner bracket
-    await _generateSingleEliminationBracket(tournamentId, teamIds);
+    await _generateSingleEliminationBracket(tournamentId, teamIds, teamNames);
 
     // Loser bracket (round 1 placeholders for first losers)
     final batch = _firebaseService.firestore.batch();
@@ -141,8 +153,8 @@ class TournamentRepository {
         'tournamentId': tournamentId,
         'team1Id': teamIds[i],
         'team2Id': teamIds[i + 1],
-        'team1Name': '',
-        'team2Name': '',
+        'team1Name': teamNames[teamIds[i]] ?? teamIds[i],
+        'team2Name': teamNames[teamIds[i + 1]] ?? teamIds[i + 1],
         'team1Score': 0,
         'team2Score': 0,
         'round': 1, // loser bracket round 1
@@ -159,7 +171,7 @@ class TournamentRepository {
   }
 
   Future<void> _generateRoundRobinBracket(
-      String tournamentId, List<String> teamIds) async {
+      String tournamentId, List<String> teamIds, Map<String, String> teamNames) async {
     final batch = _firebaseService.firestore.batch();
     int matchPosition = 0;
 
@@ -169,8 +181,8 @@ class TournamentRepository {
           'tournamentId': tournamentId,
           'team1Id': teamIds[i],
           'team2Id': teamIds[j],
-          'team1Name': '',
-          'team2Name': '',
+          'team1Name': teamNames[teamIds[i]] ?? teamIds[i],
+          'team2Name': teamNames[teamIds[j]] ?? teamIds[j],
           'team1Score': 0,
           'team2Score': 0,
           'round': 1,

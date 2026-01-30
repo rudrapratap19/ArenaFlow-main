@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../data/models/team/player_model.dart';
 import '../../blocs/team/team_bloc.dart';
+import '../../../core/constants/app_colors.dart';
 
 class AddPlayerPage extends StatefulWidget {
   final String teamId;
@@ -119,8 +120,9 @@ class _AddPlayerPageState extends State<AddPlayerPage> {
       child: Scaffold(
         appBar: AppBar(
           title: Text(widget.player == null ? 'Add Player' : 'Edit Player'),
-          backgroundColor: Colors.blue, // Changed from transparent
-        foregroundColor: Colors.white,
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          elevation: 0,
           actions: [
             IconButton(
               icon: const Icon(Icons.save),

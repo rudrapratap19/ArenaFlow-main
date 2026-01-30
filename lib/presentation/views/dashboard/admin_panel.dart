@@ -3,7 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/routing/app_router.dart';
-import '../../../core/utils/helpers.dart';
+import '../../../core/widgets/custom_app_bar.dart';
+import '../../../core/widgets/modern_card.dart';
 import '../../blocs/auth/auth_bloc.dart';
 
 class AdminPanel extends StatefulWidget {
@@ -69,13 +70,13 @@ class _AdminPanelState extends State<AdminPanel>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Admin Panel'),
-        backgroundColor: Colors.blue,
+      appBar: CustomAppBar(
+        title: 'Arena Flow',
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: _logout,
+            tooltip: 'Logout',
           ),
         ],
       ),
@@ -88,14 +89,14 @@ class _AdminPanelState extends State<AdminPanel>
         child: FadeTransition(
           opacity: _fadeAnimation,
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildHeader(),
-                const SizedBox(height: 24),
+                const SizedBox(height: 32),
                 _buildSportsGrid(),
-                const SizedBox(height: 24),
+                const SizedBox(height: 32),
                 _buildActionButtons(),
               ],
             ),
@@ -113,30 +114,18 @@ class _AdminPanelState extends State<AdminPanel>
           userName = state.user.name;
         }
 
-        return Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: AppColors.primaryGradient,
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary.withOpacity(0.3),
-                blurRadius: 10,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ),
+        return ModernCard(
+          backgroundColor: AppColors.primary,
+          borderColor: Colors.transparent,
+          padding: const EdgeInsets.all(24),
+          enableHoverEffect: false,
           child: Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.2),
-                  shape: BoxShape.circle,
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 child: const Icon(
                   Icons.admin_panel_settings,
@@ -144,13 +133,31 @@ class _AdminPanelState extends State<AdminPanel>
                   color: AppColors.textWhite,
                 ),
               ),
-              const SizedBox(width: 16),
-              Text(
-                userName,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: AppColors.textWhite,
-                      fontWeight: FontWeight.bold,
+              const SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Welcome Back',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white70,
+                        letterSpacing: 0.5,
+                      ),
                     ),
+                    const SizedBox(height: 4),
+                    Text(
+                      userName,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textWhite,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -164,116 +171,120 @@ class _AdminPanelState extends State<AdminPanel>
       {
         'name': 'Football',
         'icon': Icons.sports_soccer,
-        'gradient': AppColors.footballGradient
+        'color': AppColors.footballColor,
       },
       {
         'name': 'Cricket',
         'icon': Icons.sports_cricket,
-        'gradient': AppColors.cricketGradient
+        'color': AppColors.cricketColor,
       },
       {
         'name': 'Basketball',
         'icon': Icons.sports_basketball,
-        'gradient': AppColors.basketballGradient
+        'color': AppColors.basketballColor,
       },
       {
         'name': 'Volleyball',
         'icon': Icons.sports_volleyball,
-        'gradient': AppColors.volleyballGradient
+        'color': AppColors.volleyballColor,
       },
     ];
 
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 1.3,
-      ),
-      itemCount: sports.length,
-      itemBuilder: (context, index) {
-        final sport = sports[index];
-        return _buildSportCard(
-          sport['name'] as String,
-          sport['icon'] as IconData,
-          sport['gradient'] as List<Color>,
-        );
-      },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Sports',
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+        ),
+        const SizedBox(height: 16),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+            childAspectRatio: 1.1,
+          ),
+          itemCount: sports.length,
+          itemBuilder: (context, index) {
+            final sport = sports[index];
+            return _buildSportCard(
+              sport['name'] as String,
+              sport['icon'] as IconData,
+              sport['color'] as Color,
+            );
+          },
+        ),
+      ],
     );
   }
 
-  Widget _buildSportCard(String name, IconData icon, List<Color> gradient) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: gradient,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: gradient[0].withOpacity(0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+  Widget _buildSportCard(String name, IconData icon, Color color) {
+    return ModernCard(
+      backgroundColor: color.withOpacity(0.1),
+      borderColor: color.withOpacity(0.2),
+      onTap: () {
+        Navigator.pushNamed(
+          context,
+          AppRouter.teamsList,
+          arguments: name.toLowerCase(),
+        );
+      },
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, size: 32, color: AppColors.textWhite),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            name,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
           ),
         ],
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: () {
-            Helpers.showSnackBar(
-              context,
-              '$name feature - Coming soon!',
-            );
-          },
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 48, color: AppColors.textWhite),
-              const SizedBox(height: 12),
-              Text(
-                name,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: AppColors.textWhite,
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
-
   Widget _buildActionButtons() {
     final actions = [
       {
         'title': 'Scheduled Matches',
+        'subtitle': 'View all matches',
         'icon': Icons.calendar_today,
         'color': AppColors.primary,
         'onTap': () => Navigator.pushNamed(context, AppRouter.scheduledMatches),
       },
       {
         'title': 'Manage Teams',
+        'subtitle': 'Create & manage teams',
         'icon': Icons.groups,
         'color': AppColors.accent,
         'onTap': () => Navigator.pushNamed(context, AppRouter.teamsList),
       },
       {
         'title': 'All Tournaments',
-        'icon': Icons.list_alt,
+        'subtitle': 'Browse tournaments',
+        'icon': Icons.emoji_events,
         'color': AppColors.warning,
         'onTap': () => Navigator.pushNamed(context, AppRouter.tournamentsList),
       },
       {
         'title': 'Create Tournament',
-        'icon': Icons.emoji_events,
-        'color': AppColors.primaryBlue,
+        'subtitle': 'Start new tournament',
+        'icon': Icons.add_box,
+        'color': AppColors.success,
         'onTap': () => Navigator.pushNamed(context, AppRouter.createTournament),
       },
     ];
@@ -283,8 +294,8 @@ class _AdminPanelState extends State<AdminPanel>
       children: [
         Text(
           'Quick Actions',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w800,
               ),
         ),
         const SizedBox(height: 16),
@@ -297,9 +308,10 @@ class _AdminPanelState extends State<AdminPanel>
             final action = actions[index];
             return _buildActionButton(
               action['title'] as String,
+              action['subtitle'] as String,
               action['icon'] as IconData,
               action['color'] as Color,
-                          action['onTap'] as VoidCallback,
+              action['onTap'] as VoidCallback,
             );
           },
         ),
@@ -307,25 +319,57 @@ class _AdminPanelState extends State<AdminPanel>
     );
   }
 
-  Widget _buildActionButton(String title, IconData icon, Color color, VoidCallback onTap) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ListTile(
-        leading: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(8),
+  Widget _buildActionButton(
+    String title,
+    String subtitle,
+    IconData icon,
+    Color color,
+    VoidCallback onTap,
+  ) {
+    return ModernCard(
+      onTap: onTap,
+      enableHoverEffect: true,
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              icon,
+              color: color,
+              size: 28,
+            ),
           ),
-          child: Icon(icon, color: color),
-        ),
-        title: Text(
-          title,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-        onTap: onTap,
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                ),
+              ],
+            ),
+          ),
+          Icon(
+            Icons.arrow_forward_ios_rounded,
+            size: 16,
+            color: AppColors.textSecondary,
+          ),
+        ],
       ),
     );
   }

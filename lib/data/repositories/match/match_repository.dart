@@ -29,38 +29,69 @@ class MatchRepository {
     });
   }
 
-  // Get All Matches
+  // Get All Matches (includes both regular and tournament matches)
   Stream<List<MatchModel>> getAllMatches() {
     return _firebaseService.matchesCollection
         .orderBy('scheduledTime', descending: false)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) =>
-                MatchModel.fromMap(doc.id, doc.data() as Map<String, dynamic>))
-            .toList());
+        .map((snapshot) {
+      final regularMatches = snapshot.docs
+          .map((doc) =>
+              MatchModel.fromMap(doc.id, doc.data() as Map<String, dynamic>))
+          .toList();
+
+      return Future.wait([
+        _getTournamentMatchesSnapshot(),
+      ]).then((results) {
+        final tournamentMatches = results[0] as List<MatchModel>;
+        final allMatches = [...regularMatches, ...tournamentMatches];
+        allMatches.sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
+        return allMatches;
+      });
+    }).asyncMap((future) => future);
   }
 
-  // Get Live Matches
+  // Get Live Matches (includes both regular and tournament matches)
   Stream<List<MatchModel>> getLiveMatches() {
     return _firebaseService.matchesCollection
         .where('status', isEqualTo: 'Live')
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) =>
-                MatchModel.fromMap(doc.id, doc.data() as Map<String, dynamic>))
-            .toList());
+        .map((snapshot) {
+      final regularMatches = snapshot.docs
+          .map((doc) =>
+              MatchModel.fromMap(doc.id, doc.data() as Map<String, dynamic>))
+          .toList();
+
+      return Future.wait([
+        _getTournamentMatchesByStatus('Live'),
+      ]).then((results) {
+        final tournamentMatches = results[0] as List<MatchModel>;
+        return [...regularMatches, ...tournamentMatches];
+      });
+    }).asyncMap((future) => future);
   }
 
-  // Get Scheduled Matches
+  // Get Scheduled Matches (includes both regular and tournament matches)
   Stream<List<MatchModel>> getScheduledMatches() {
     return _firebaseService.matchesCollection
         .where('status', isEqualTo: 'Scheduled')
         .orderBy('scheduledTime', descending: false)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) =>
-                MatchModel.fromMap(doc.id, doc.data() as Map<String, dynamic>))
-            .toList());
+        .map((snapshot) {
+      final regularMatches = snapshot.docs
+          .map((doc) =>
+              MatchModel.fromMap(doc.id, doc.data() as Map<String, dynamic>))
+          .toList();
+
+      return Future.wait([
+        _getTournamentMatchesByStatus('Scheduled'),
+      ]).then((results) {
+        final tournamentMatches = results[0] as List<MatchModel>;
+        final allMatches = [...regularMatches, ...tournamentMatches];
+        allMatches.sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
+        return allMatches;
+      });
+    }).asyncMap((future) => future);
   }
 
   // Update Match
@@ -129,5 +160,28 @@ class MatchRepository {
     }
     
     await batch.commit();
+  }
+
+  // Helper: Get all tournament matches
+  Future<List<MatchModel>> _getTournamentMatchesSnapshot() async {
+    final snapshot = await _firebaseService.tournamentMatchesCollection
+        .orderBy('scheduledTime', descending: false)
+        .get();
+    return snapshot.docs
+        .map((doc) =>
+            MatchModel.fromMap(doc.id, doc.data() as Map<String, dynamic>))
+        .toList();
+  }
+
+  // Helper: Get tournament matches by status
+  Future<List<MatchModel>> _getTournamentMatchesByStatus(String status) async {
+    final snapshot = await _firebaseService.tournamentMatchesCollection
+        .where('status', isEqualTo: status)
+        .orderBy('scheduledTime', descending: false)
+        .get();
+    return snapshot.docs
+        .map((doc) =>
+            MatchModel.fromMap(doc.id, doc.data() as Map<String, dynamic>))
+        .toList();
   }
 }

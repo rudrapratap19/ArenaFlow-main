@@ -58,7 +58,8 @@ class AppRouter {
         return _createRoute(const UserPanel());
 
       case teamsList:
-        return _buildRoute(const TeamsListPage());
+        final sport = settings.arguments as String?;
+        return _buildRoute(TeamsListPage(initialSport: sport));
       case addTeam:
         final team = settings.arguments as TeamModel?;
         return _buildRoute(AddTeamPage(team: team));

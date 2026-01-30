@@ -4,10 +4,15 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../core/routing/app_router.dart';
+import '../../../core/widgets/custom_app_bar.dart';
+import '../../../core/widgets/modern_card.dart';
+import '../../../core/widgets/empty_state.dart';
 import '../../blocs/team/team_bloc.dart';
 
 class TeamsListPage extends StatefulWidget {
-  const TeamsListPage({super.key});
+  final String? initialSport;
+  
+  const TeamsListPage({super.key, this.initialSport});
 
   @override
   State<TeamsListPage> createState() => _TeamsListPageState();
@@ -15,12 +20,16 @@ class TeamsListPage extends StatefulWidget {
 
 class _TeamsListPageState extends State<TeamsListPage>
     with TickerProviderStateMixin {
-  String _selectedSport = AppConstants.sportFootball;
+  late String _selectedSport;
   late AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
+    // Initialize sport from widget parameter or default to football
+    _selectedSport = widget.initialSport ?? AppConstants.sportFootball;
+    // Always load teams for the selected sport
+    // The stream will maintain the data connection
     context
         .read<TeamBloc>()
         .add(TeamLoadRequested(sport: _selectedSport));
@@ -48,85 +57,85 @@ class _TeamsListPageState extends State<TeamsListPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Teams'),
-        backgroundColor: Colors.blue, // Changed from transparent
-        foregroundColor: Colors.white,
-        elevation: 0,
+      appBar: CustomAppBar(
+        title: 'Teams',
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           Navigator.pushNamed(context, AppRouter.addTeam);
         },
-        backgroundColor: Helpers.getSportColor(_selectedSport),
-        icon: const Icon(Icons.add),
+        icon: const Icon(Icons.add_rounded),
         label: const Text('Add Team'),
       ),
       body: Column(
         children: [
           // Sport selector
           Container(
-            height: 100,
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            child: ListView(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              border: Border(
+                bottom: BorderSide(
+                  color: const Color(0xFFE2E8F0),
+                  width: 1,
+                ),
+              ),
+            ),
+            child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              children: [
-                AppConstants.sportFootball,
-                AppConstants.sportCricket,
-                AppConstants.sportBasketball,
-                AppConstants.sportVolleyball,
-              ].map((sport) {
-                final isSelected = sport == _selectedSport;
-                return GestureDetector(
-                  onTap: () => _changeSport(sport),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    margin: const EdgeInsets.only(right: 15),
-                    width: 120,
-                    decoration: BoxDecoration(
-                      gradient: isSelected
-                          ? LinearGradient(
-                              colors: Helpers.getSportGradient(sport) ?? [Colors.grey],
-                            )
-                          : null,
-                      color: isSelected ? null : Colors.grey[200],
-                      borderRadius: BorderRadius.circular(15),
-                      boxShadow: isSelected
-                          ? [
-                              BoxShadow(
-                                color: Helpers.getSportColor(sport)
-                                    .withOpacity(0.3),
-                                blurRadius: 10,
-                                offset: const Offset(0, 5),
-                              ),
-                            ]
-                          : null,
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Helpers.getSportIcon(sport),
-                          size: 35,
+              child: Row(
+                children: [
+                  AppConstants.sportFootball,
+                  AppConstants.sportCricket,
+                  AppConstants.sportBasketball,
+                  AppConstants.sportVolleyball,
+                ].map((sport) {
+                  final isSelected = sport == _selectedSport;
+                  final sportColor = Helpers.getSportColor(sport);
+                  
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: GestureDetector(
+                      onTap: () => _changeSport(sport),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        decoration: BoxDecoration(
                           color: isSelected
-                              ? Colors.white
-                              : Helpers.getSportColor(sport),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          sport,
-                          style: TextStyle(
-                            color: isSelected ? Colors.white : Colors.black87,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
+                              ? sportColor
+                              : sportColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: isSelected
+                                ? Colors.transparent
+                                : sportColor.withOpacity(0.3),
+                            width: 1.5,
                           ),
                         ),
-                      ],
+                        child: Row(
+                          children: [
+                            Icon(
+                              Helpers.getSportIcon(sport),
+                              size: 20,
+                              color: isSelected ? AppColors.textWhite : sportColor,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              sport,
+                              style: TextStyle(
+                                color: isSelected ? AppColors.textWhite : sportColor,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                );
-              }).toList(),
+                  );
+                }).toList(),
+              ),
             ),
           ),
 
@@ -135,202 +144,151 @@ class _TeamsListPageState extends State<TeamsListPage>
             child: BlocBuilder<TeamBloc, TeamState>(
               builder: (context, state) {
                 if (state is TeamLoading) {
-                  return Center(
-                    child: CircularProgressIndicator(
-                      color: Helpers.getSportColor(_selectedSport),
-                    ),
+                  return const Center(
+                    child: CircularProgressIndicator(),
                   );
                 } else if (state is TeamLoaded) {
                   if (state.teams.isEmpty) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Helpers.getSportIcon(_selectedSport),
-                            size: 80,
-                            color: Colors.grey[300],
-                          ),
-                          const SizedBox(height: 20),
-                          Text(
-                            'No teams for $_selectedSport yet',
-                            style: TextStyle(
-                              fontSize: 18,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            'Tap the + button to add a team',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[500],
-                            ),
-                          ),
-                        ],
-                      ),
+                    return EmptyState(
+                      icon: Helpers.getSportIcon(_selectedSport),
+                      title: 'No $_selectedSport Teams',
+                      subtitle: 'Create your first team to get started. Tap the + button below.',
+                      iconColor: Helpers.getSportColor(_selectedSport),
+                      actionLabel: 'Add Team',
+                      onActionPressed: () {
+                        Navigator.pushNamed(context, AppRouter.addTeam);
+                      },
                     );
                   }
 
                   return ListView.builder(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(16),
                     itemCount: state.teams.length,
                     itemBuilder: (context, index) {
                       final team = state.teams[index];
-                      return FadeTransition(
-                        opacity: _controller,
-                        child: SlideTransition(
-                          position: Tween<Offset>(
-                            begin: Offset(0, 0.3 * (index + 1)),
-                            end: Offset.zero,
-                          ).animate(CurvedAnimation(
-                            parent: _controller,
-                            curve: Curves.easeOut,
-                          )),
-                          child: Card(
-                            margin: const EdgeInsets.only(bottom: 15),
-                            elevation: 3,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(15),
-                            ),
-                            child: InkWell(
-                              onTap: () {
-                                Navigator.pushNamed(
-                                  context,
-                                  AppRouter.teamRoster,
-                                  arguments: team,
-                                );
-                              },
-                              borderRadius: BorderRadius.circular(15),
-                              child: Container(
-                                padding: const EdgeInsets.all(20),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: Helpers.getSportGradient(team.sport)
-                                        ?.map((color) => color.withOpacity(0.3))
-                                        .toList() ?? [Colors.grey],
-                                  ),
-                                  borderRadius: BorderRadius.circular(15),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: 60,
-                                      height: 60,
-                                      decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          colors: Helpers.getSportGradient(team.sport) ?? [Colors.grey],
-                                        ),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Icon(
-                                        Helpers.getSportIcon(team.sport),
-                                        color: Colors.white,
-                                        size: 30,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 20),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            team.name,
-                                            style: const TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 5),
-                                          Row(
-                                            children: [
-                                              Icon(
-                                                Icons.people,
-                                                size: 16,
-                                                color: Colors.grey[600],
-                                              ),
-                                              const SizedBox(width: 5),
-                                              Text(
-                                                '${team.playerCount} players',
-                                                style: TextStyle(
-                                                  color: Colors.grey[600],
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    PopupMenuButton(
-                                      icon: const Icon(Icons.more_vert),
-                                      itemBuilder: (context) => [
-                                        const PopupMenuItem(
-                                          value: 'edit',
-                                          child: Row(
-                                            children: [
-                                              Icon(Icons.edit,
-                                                  color: Colors.blue),
-                                              SizedBox(width: 10),
-                                              Text('Edit'),
-                                            ],
-                                          ),
-                                        ),
-                                        const PopupMenuItem(
-                                          value: 'delete',
-                                          child: Row(
-                                            children: [
-                                              Icon(Icons.delete,
-                                                  color: Colors.red),
-                                              SizedBox(width: 10),
-                                              Text('Delete'),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                      onSelected: (value) {
-                                        if (value == 'edit') {
-                                          Navigator.pushNamed(
-                                            context,
-                                            AppRouter.addTeam,
-                                            arguments: team,
-                                          );
-                                        } else if (value == 'delete') {
-                                          _showDeleteDialog(context, team.id);
-                                        }
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: _buildTeamCard(team),
                       );
                     },
                   );
                 } else if (state is TeamError) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.error_outline,
-                          size: 60,
-                          color: Colors.red,
-                        ),
-                        const SizedBox(height: 20),
-                        Text(
-                          'Error: ${state.message}',
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                      ],
-                    ),
+                  return EmptyState(
+                    icon: Icons.error_outline,
+                    title: 'Error Loading Teams',
+                    subtitle: state.message,
+                    iconColor: AppColors.error,
                   );
                 }
                 return const SizedBox();
               },
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTeamCard(dynamic team) {
+    final sportColor = Helpers.getSportColor(team.sport);
+    
+    return ModernCard(
+      onTap: () {
+        Navigator.pushNamed(
+          context,
+          AppRouter.teamRoster,
+          arguments: team,
+        );
+      },
+      child: Row(
+        children: [
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: sportColor.withOpacity(0.1),
+              border: Border.all(
+                color: sportColor.withOpacity(0.3),
+                width: 2,
+              ),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(
+              Helpers.getSportIcon(team.sport),
+              color: sportColor,
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  team.name,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.people_rounded,
+                      size: 16,
+                      color: AppColors.textSecondary,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${team.playerCount} players',
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          PopupMenuButton(
+            icon: const Icon(Icons.more_vert_rounded, size: 20),
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'edit',
+                child: Row(
+                  children: [
+                    Icon(Icons.edit_rounded, color: AppColors.primary),
+                    SizedBox(width: 10),
+                    Text('Edit'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'delete',
+                child: Row(
+                  children: [
+                    Icon(Icons.delete_rounded, color: AppColors.error),
+                    SizedBox(width: 10),
+                    Text('Delete'),
+                  ],
+                ),
+              ),
+            ],
+            onSelected: (value) {
+              if (value == 'edit') {
+                Navigator.pushNamed(
+                  context,
+                  AppRouter.addTeam,
+                  arguments: team,
+                );
+              } else if (value == 'delete') {
+                _showDeleteDialog(context, team.id);
+              }
+            },
           ),
         ],
       ),
@@ -355,7 +313,7 @@ class _TeamsListPageState extends State<TeamsListPage>
               Navigator.pop(dialogContext);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
+              backgroundColor: AppColors.error,
             ),
             child: const Text('Delete'),
           ),

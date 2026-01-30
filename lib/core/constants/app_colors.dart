@@ -1,51 +1,53 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // Primary Colors
-  static const Color primary = Color(0xFF2196F3);
-  static const Color primaryDark = Color(0xFF1976D2);
-  static const Color primaryLight = Color(0xFF42A5F5);
-  static const Color primaryBlue = Color(0xFF1565C0);
+  // Primary Colors - Modern Gradient Blue
+  static const Color primary = Color(0xFF6366F1);
+  static const Color primaryDark = Color(0xFF4F46E5);
+  static const Color primaryLight = Color(0xFF818CF8);
+  static const Color primaryVeryLight = Color(0xFFE0E7FF);
 
-  // Accent Colors
-  static const Color accent = Color(0xFF4CAF50);
-  static const Color accentDark = Color(0xFF388E3C);
-  static const Color accentLight = Color(0xFF66BB6A);
+  // Accent Colors - Vibrant Cyan
+  static const Color accent = Color(0xFF06B6D4);
+  static const Color accentDark = Color(0xFF0891B2);
+  static const Color accentLight = Color(0xFF22D3EE);
 
-  // Sports Colors
-  static const Color footballColor = Color(0xFF42A5F5);
-  static const Color cricketColor = Color(0xFFFF7043);
-  static const Color basketballColor = Color(0xFFFF9800);
-  static const Color volleyballColor = Color(0xFFEF5350);
+  // Sports Colors - Modern Palette
+  static const Color footballColor = Color(0xFF3B82F6); // Blue
+  static const Color cricketColor = Color(0xFFEC4899); // Pink
+  static const Color basketballColor = Color(0xFFF59E0B); // Amber
+  static const Color volleyballColor = Color(0xFFEF4444); // Red
 
-  // Status Colors
-  static const Color statusScheduled = Color(0xFFFF9800);
-  static const Color statusLive = Color(0xFF4CAF50);
-  static const Color statusCompleted = Color(0xFF9E9E9E);
-  static const Color statusCancelled = Color(0xFFF44336);
+  // Status Colors - Clear States
+  static const Color statusScheduled = Color(0xFFF59E0B); // Amber
+  static const Color statusLive = Color(0xFF10B981); // Emerald
+  static const Color statusCompleted = Color(0xFF8B5CF6); // Violet
+  static const Color statusCancelled = Color(0xFFEF4444); // Red
 
-  // Position Colors
-  static const Color positionForward = Color(0xFFE91E63);
-  static const Color positionMidfielder = Color(0xFF9C27B0);
-  static const Color positionDefender = Color(0xFF2196F3);
-  static const Color positionGoalkeeper = Color(0xFFFF9800);
+  // Position Colors - Professional
+  static const Color positionForward = Color(0xFFEC4899); // Pink
+  static const Color positionMidfielder = Color(0xFF8B5CF6); // Violet
+  static const Color positionDefender = Color(0xFF3B82F6); // Blue
+  static const Color positionGoalkeeper = Color(0xFFF59E0B); // Amber
 
-  // Background Colors
-  static const Color background = Color(0xFFF5F5F5);
+  // Background Colors - Modern Grays
+  static const Color background = Color(0xFFF8FAFC); // Almost white
   static const Color surface = Colors.white;
   static const Color cardBackground = Colors.white;
+  static const Color surfaceLight = Color(0xFFF1F5F9);
 
-  // Text Colors
-  static const Color textPrimary = Color(0xFF212121);
-  static const Color textSecondary = Color(0xFF757575);
-  static const Color textHint = Color(0xFFBDBDBD);
+  // Text Colors - Accessible
+  static const Color textPrimary = Color(0xFF0F172A);
+  static const Color textSecondary = Color(0xFF64748B);
+  static const Color textTertiary = Color(0xFF94A3B8);
+  static const Color textHint = Color(0xFFCBD5E1);
   static const Color textWhite = Colors.white;
 
-  // UI Colors
-  static const Color success = Color(0xFF4CAF50);
-  static const Color error = Color(0xFFF44336);
-  static const Color warning = Color(0xFFFF9800);
-  static const Color info = Color(0xFF2196F3);
+  // UI Colors - Semantic
+  static const Color success = Color(0xFF10B981); // Emerald
+  static const Color error = Color(0xFFEF4444); // Red
+  static const Color warning = Color(0xFFF59E0B); // Amber
+  static const Color info = Color(0xFF06B6D4); // Cyan
 
   // Gradient Colors
   static List<Color> primaryGradient = [

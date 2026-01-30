@@ -109,20 +109,23 @@ class _LoginPageState extends State<LoginPage>
           }
         },
         child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: FadeTransition(
-                opacity: _fadeAnimation,
-                child: SlideTransition(
-                  position: _slideAnimation,
+          child: SingleChildScrollView(
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: SlideTransition(
+                position: _slideAnimation,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+                  constraints: BoxConstraints(
+                    minHeight: MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top,
+                  ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       _buildHeader(),
-                      const SizedBox(height: 48),
+                      const SizedBox(height: 40),
                       _buildLoginForm(),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 24),
                       _buildSignUpPrompt(),
                     ],
                   ),
@@ -139,7 +142,7 @@ class _LoginPageState extends State<LoginPage>
     return Column(
       children: [
         Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: AppColors.primaryGradient,
@@ -149,31 +152,32 @@ class _LoginPageState extends State<LoginPage>
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withOpacity(0.3),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
+                color: AppColors.primary.withOpacity(0.25),
+                blurRadius: 25,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
           child: const Icon(
             Icons.sports_soccer,
-            size: 64,
-            color: AppColors.textWhite,
+            size: 56,
+            color: Colors.white,
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 20),
         Text(
-          AppConstants.appName,
-          style: Theme.of(context).textTheme.displayMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: AppColors.primary,
+          'Welcome Back',
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: Colors.black87,
               ),
         ),
         const SizedBox(height: 8),
         Text(
-          'Tournament Management System',
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: AppColors.textSecondary,
+          'Sign in to manage your tournaments',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
               ),
         ),
       ],
@@ -192,9 +196,24 @@ class _LoginPageState extends State<LoginPage>
               TextFormField(
                 controller: _emailController,
                 enabled: !isLoading,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  prefixIcon: Icon(Icons.email_outlined),
+                decoration: InputDecoration(
+                  labelText: 'Email Address',
+                  prefixIcon: Icon(Icons.email_outlined, color: Colors.grey[600]),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(color: Colors.grey[300]!),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(color: Colors.grey[300]!),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey[50],
+                  contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
                 ),
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
@@ -213,12 +232,11 @@ class _LoginPageState extends State<LoginPage>
                 enabled: !isLoading,
                 decoration: InputDecoration(
                   labelText: 'Password',
-                  prefixIcon: const Icon(Icons.lock_outlined),
+                  prefixIcon: Icon(Icons.lock_outlined, color: Colors.grey[600]),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _isPasswordVisible
-                          ? Icons.visibility_off
-                          : Icons.visibility,
+                      _isPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                      color: Colors.grey[600],
                     ),
                     onPressed: () {
                       setState(() {
@@ -226,6 +244,21 @@ class _LoginPageState extends State<LoginPage>
                       });
                     },
                   ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(color: Colors.grey[300]!),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(color: Colors.grey[300]!),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                  ),
+                  filled: true,
+                  fillColor: Colors.grey[50],
+                  contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
                 ),
                 obscureText: !_isPasswordVisible,
                 validator: (value) {
@@ -253,32 +286,55 @@ class _LoginPageState extends State<LoginPage>
                                   _rememberMe = value ?? true;
                                 });
                               },
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4),
+                        ),
                       ),
-                      const Text('Remember me'),
+                      const Text(
+                        'Remember me',
+                        style: TextStyle(fontSize: 14, color: Colors.grey),
+                      ),
                     ],
                   ),
                   TextButton(
                     onPressed: isLoading ? null : _forgotPassword,
-                    child: const Text('Forgot Password?'),
+                    child: const Text(
+                      'Forgot Password?',
+                      style: TextStyle(color: AppColors.primary),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 28),
               SizedBox(
                 width: double.infinity,
-                height: 52,
+                height: 50,
                 child: ElevatedButton(
                   onPressed: isLoading ? null : _login,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    elevation: 2,
+                  ),
                   child: isLoading
                       ? const SizedBox(
                           height: 24,
                           width: 24,
                           child: CircularProgressIndicator(
-                            color: AppColors.textWhite,
-                            strokeWidth: 2,
+                            color: Colors.white,
+                            strokeWidth: 2.5,
                           ),
                         )
-                      : const Text('Login'),
+                      : const Text(
+                          'Sign In',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
               ),
             ],
@@ -292,12 +348,22 @@ class _LoginPageState extends State<LoginPage>
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Text("Don't have an account? "),
+        const Text(
+          "Don't have an account? ",
+          style: TextStyle(color: Colors.grey, fontSize: 14),
+        ),
         TextButton(
           onPressed: () {
             Navigator.of(context).pushNamed(AppRouter.signUp);
           },
-          child: const Text('Sign Up'),
+          child: const Text(
+            'Sign Up',
+            style: TextStyle(
+              color: AppColors.primary,
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+            ),
+          ),
         ),
       ],
     );

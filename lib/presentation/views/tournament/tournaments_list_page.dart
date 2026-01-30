@@ -26,7 +26,7 @@ class _TournamentsListPageState extends State<TournamentsListPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Tournaments'),
-        backgroundColor: Colors.blue, // Changed from transparent
+        backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
         elevation: 0,
       ),
@@ -34,7 +34,7 @@ class _TournamentsListPageState extends State<TournamentsListPage> {
         onPressed: () {
           Navigator.pushNamed(context, AppRouter.createTournament);
         },
-        backgroundColor: AppColors.primaryBlue,
+        backgroundColor: AppColors.primary,
         icon: const Icon(Icons.add),
         label: const Text('Create Tournament'),
       ),
@@ -42,7 +42,7 @@ class _TournamentsListPageState extends State<TournamentsListPage> {
         builder: (context, state) {
           if (state is TournamentLoading) {
             return Center(
-              child: CircularProgressIndicator(color: AppColors.primaryBlue),
+              child: CircularProgressIndicator(color: AppColors.primary),
             );
           } else if (state is TournamentsLoaded) {
             if (state.tournaments.isEmpty) {
@@ -70,13 +70,24 @@ class _TournamentsListPageState extends State<TournamentsListPage> {
               );
             }
 
-            return ListView.builder(
-              padding: const EdgeInsets.all(20),
-              itemCount: state.tournaments.length,
-              itemBuilder: (context, index) {
-                final tournament = state.tournaments[index];
-                return _buildTournamentCard(tournament);
-              },
+            return CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(
+                  child: _buildHeaderSection(state.tournaments),
+                ),
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final tournament = state.tournaments[index];
+                        return _buildTournamentCard(tournament);
+                      },
+                      childCount: state.tournaments.length,
+                    ),
+                  ),
+                ),
+              ],
             );
           } else if (state is TournamentError) {
             return Center(
@@ -103,6 +114,158 @@ class _TournamentsListPageState extends State<TournamentsListPage> {
     );
   }
 
+  Widget _buildHeaderSection(List<TournamentModel> tournaments) {
+    int activeTournaments = tournaments
+        .where((t) => t.status == TournamentStatus.inProgress)
+        .length;
+    int registrationOpen = tournaments
+        .where((t) => t.status == TournamentStatus.registration)
+        .length;
+    int totalTeams =
+        tournaments.fold(0, (sum, t) => sum + t.teamIds.length);
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [AppColors.primary, AppColors.primary.withOpacity(0.7)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Welcome text
+          const Text(
+            'Tournament Hub',
+            style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Manage and track all your tournaments',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.white.withOpacity(0.9),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Stats cards
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard(
+                  icon: Icons.play_circle_fill,
+                  label: 'Active',
+                  value: activeTournaments.toString(),
+                  color: AppColors.liveGreen,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildStatCard(
+                  icon: Icons.how_to_reg,
+                  label: 'Registering',
+                  value: registrationOpen.toString(),
+                  color: AppColors.scheduledOrange,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildStatCard(
+                  icon: Icons.people,
+                  label: 'Total Teams',
+                  value: totalTeams.toString(),
+                  color: Colors.blue.shade400,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // Search bar placeholder
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.search, color: Colors.grey[400]),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Search tournaments...',
+                      border: InputBorder.none,
+                      hintStyle: TextStyle(color: Colors.grey[400]),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+
+          // Section title
+          const Text(
+            'All Tournaments',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatCard({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withOpacity(0.2)),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: Colors.white, size: 24),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.white.withOpacity(0.8),
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildTournamentCard(TournamentModel tournament) {
     Color statusColor;
     String statusText;
@@ -120,17 +283,17 @@ class _TournamentsListPageState extends State<TournamentsListPage> {
         statusIcon = Icons.play_circle_filled;
         break;
       case TournamentStatus.completed:
-        statusColor = Colors.grey; // Changed from AppColors.completedGrey
+        statusColor = Colors.grey;
         statusText = 'Completed';
         statusIcon = Icons.check_circle;
         break;
     }
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 15),
-      elevation: 3,
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 2,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: InkWell(
         onTap: () {
@@ -140,35 +303,15 @@ class _TournamentsListPageState extends State<TournamentsListPage> {
             arguments: tournament,
           );
         },
-        borderRadius: BorderRadius.circular(15),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(colors: Helpers.getSportGradient(tournament.sport)),
-            borderRadius: BorderRadius.circular(15),
-          ),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Header with title and status
               Row(
                 children: [
-                  // Sport icon
-                  Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(colors: Helpers.getSportGradient(tournament.sport)),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Helpers.getSportIcon(tournament.sport),
-                      color: Colors.white,
-                      size: 25,
-                    ),
-                  ),
-                  const SizedBox(width: 15),
-
-                  // Tournament info
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -176,11 +319,13 @@ class _TournamentsListPageState extends State<TournamentsListPage> {
                         Text(
                           tournament.name,
                           style: const TextStyle(
-                            fontSize: 18,
+                            fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 5),
+                        const SizedBox(height: 4),
                         Text(
                           tournament.type.toString().split('.').last.toUpperCase(),
                           style: TextStyle(
@@ -192,12 +337,11 @@ class _TournamentsListPageState extends State<TournamentsListPage> {
                       ],
                     ),
                   ),
-
-                  // Status badge
+                  const SizedBox(width: 12),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
+                      horizontal: 10,
+                      vertical: 5,
                     ),
                     decoration: BoxDecoration(
                       color: statusColor,
@@ -206,13 +350,13 @@ class _TournamentsListPageState extends State<TournamentsListPage> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(statusIcon, size: 14, color: Colors.white),
-                        const SizedBox(width: 5),
+                        Icon(statusIcon, size: 12, color: Colors.white),
+                        const SizedBox(width: 4),
                         Text(
                           statusText,
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 11,
+                            fontSize: 10,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -221,23 +365,44 @@ class _TournamentsListPageState extends State<TournamentsListPage> {
                   ),
                 ],
               ),
-              const SizedBox(height: 15),
+              const SizedBox(height: 12),
 
-              // Tournament details
+              // Details row
               Row(
                 children: [
-                  Icon(Icons.calendar_today, size: 14, color: Colors.grey[600]),
-                  const SizedBox(width: 5),
-                  Text(
-                    'Start: ${Helpers.formatDate(tournament.startDate)}',
-                    style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Icon(Icons.calendar_today,
+                            size: 14, color: Colors.grey[500]),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            Helpers.formatDate(tournament.startDate),
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 12,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(width: 20),
-                  Icon(Icons.groups, size: 14, color: Colors.grey[600]),
-                  const SizedBox(width: 5),
-                  Text(
-                    '${tournament.teamIds.length} Teams',
-                    style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Icon(Icons.groups, size: 14, color: Colors.grey[500]),
+                        const SizedBox(width: 6),
+                        Text(
+                          '${tournament.teamIds.length} Teams',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
