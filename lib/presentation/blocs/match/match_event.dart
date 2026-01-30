@@ -83,3 +83,28 @@ class MatchDeleteRequested extends MatchEvent {
   @override
   List<Object?> get props => [matchId];
 }
+class CommentaryAddRequested extends MatchEvent {
+  final String matchId;
+  final Commentary commentary;
+
+  const CommentaryAddRequested({
+    required this.matchId,
+    required this.commentary,
+  });
+
+  @override
+  List<Object?> get props => [matchId, commentary];
+}
+
+class PlayerStatUpdateRequested extends MatchEvent {
+  final String matchId;
+  final PlayerStat playerStat;
+
+  const PlayerStatUpdateRequested({
+    required this.matchId,
+    required this.playerStat,
+  });
+
+  @override
+  List<Object?> get props => [matchId, playerStat];
+}

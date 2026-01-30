@@ -51,3 +51,20 @@ class MatchError extends MatchState {
   @override
   List<Object?> get props => [message];
 }
+class CommentaryAdded extends MatchState {
+  final String message;
+
+  const CommentaryAdded({required this.message});
+
+  @override
+  List<Object?> get props => [message];
+}
+
+class PlayerStatUpdated extends MatchState {
+  final String message;
+
+  const PlayerStatUpdated({required this.message});
+
+  @override
+  List<Object?> get props => [message];
+}

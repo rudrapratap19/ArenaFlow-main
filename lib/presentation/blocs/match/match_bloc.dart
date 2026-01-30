@@ -19,6 +19,8 @@ class MatchBloc extends Bloc<MatchEvent, MatchState> {
     on<MatchScoreUpdateRequested>(_onMatchScoreUpdateRequested);
     on<MatchStatusUpdateRequested>(_onMatchStatusUpdateRequested);
     on<MatchDeleteRequested>(_onMatchDeleteRequested);
+    on<CommentaryAddRequested>(_onCommentaryAddRequested);
+    on<PlayerStatUpdateRequested>(_onPlayerStatUpdateRequested);
   }
 
   Future<void> _onMatchLoadAllRequested(
@@ -149,6 +151,30 @@ class MatchBloc extends Bloc<MatchEvent, MatchState> {
     try {
       await _matchRepository.deleteMatch(event.matchId);
       emit(const MatchOperationSuccess(message: 'Match deleted successfully'));
+    } catch (e) {
+      emit(MatchError(message: e.toString()));
+    }
+  }
+
+  Future<void> _onCommentaryAddRequested(
+    CommentaryAddRequested event,
+    Emitter<MatchState> emit,
+  ) async {
+    try {
+      await _matchRepository.addCommentary(event.matchId, event.commentary);
+      emit(const CommentaryAdded(message: 'Commentary added successfully'));
+    } catch (e) {
+      emit(MatchError(message: e.toString()));
+    }
+  }
+
+  Future<void> _onPlayerStatUpdateRequested(
+    PlayerStatUpdateRequested event,
+    Emitter<MatchState> emit,
+  ) async {
+    try {
+      await _matchRepository.updatePlayerStats(event.matchId, event.playerStat);
+      emit(const PlayerStatUpdated(message: 'Player stats updated successfully'));
     } catch (e) {
       emit(MatchError(message: e.toString()));
     }

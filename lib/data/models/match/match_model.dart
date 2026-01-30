@@ -13,6 +13,129 @@ enum MatchType {
   grandFinal,
 }
 
+// Commentary Model
+class Commentary extends Equatable {
+  final String id;
+  final String teamId;
+  final String teamName;
+  final String message;
+  final int minute;
+  final DateTime timestamp;
+
+  const Commentary({
+    required this.id,
+    required this.teamId,
+    required this.teamName,
+    required this.message,
+    required this.minute,
+    required this.timestamp,
+  });
+
+  factory Commentary.fromMap(String id, Map<String, dynamic> map) {
+    return Commentary(
+      id: id,
+      teamId: map['teamId'] ?? '',
+      teamName: map['teamName'] ?? '',
+      message: map['message'] ?? '',
+      minute: map['minute'] ?? 0,
+      timestamp: (map['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'teamId': teamId,
+      'teamName': teamName,
+      'message': message,
+      'minute': minute,
+      'timestamp': Timestamp.fromDate(timestamp),
+    };
+  }
+
+  @override
+  List<Object?> get props => [id, teamId, teamName, message, minute, timestamp];
+}
+
+// Player Statistics Model
+class PlayerStat extends Equatable {
+  final String playerId;
+  final String playerName;
+  final String teamId;
+  final String teamName;
+  final int goals;
+  final int assists;
+  final int yellowCards;
+  final int redCards;
+  final DateTime timestamp;
+
+  const PlayerStat({
+    required this.playerId,
+    required this.playerName,
+    required this.teamId,
+    required this.teamName,
+    this.goals = 0,
+    this.assists = 0,
+    this.yellowCards = 0,
+    this.redCards = 0,
+    required this.timestamp,
+  });
+
+  factory PlayerStat.fromMap(String id, Map<String, dynamic> map) {
+    return PlayerStat(
+      playerId: id,
+      playerName: map['playerName'] ?? '',
+      teamId: map['teamId'] ?? '',
+      teamName: map['teamName'] ?? '',
+      goals: map['goals'] ?? 0,
+      assists: map['assists'] ?? 0,
+      yellowCards: map['yellowCards'] ?? 0,
+      redCards: map['redCards'] ?? 0,
+      timestamp: (map['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now(),
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'playerName': playerName,
+      'teamId': teamId,
+      'teamName': teamName,
+      'goals': goals,
+      'assists': assists,
+      'yellowCards': yellowCards,
+      'redCards': redCards,
+      'timestamp': Timestamp.fromDate(timestamp),
+    };
+  }
+
+  PlayerStat copyWith({
+    String? playerId,
+    String? playerName,
+    String? teamId,
+    String? teamName,
+    int? goals,
+    int? assists,
+    int? yellowCards,
+    int? redCards,
+    DateTime? timestamp,
+  }) {
+    return PlayerStat(
+      playerId: playerId ?? this.playerId,
+      playerName: playerName ?? this.playerName,
+      teamId: teamId ?? this.teamId,
+      teamName: teamName ?? this.teamName,
+      goals: goals ?? this.goals,
+      assists: assists ?? this.assists,
+      yellowCards: yellowCards ?? this.yellowCards,
+      redCards: redCards ?? this.redCards,
+      timestamp: timestamp ?? this.timestamp,
+    );
+  }
+
+  @override
+  List<Object?> get props =>
+      [playerId, playerName, teamId, teamName, goals, assists, yellowCards, redCards, timestamp];
+}
+
 class MatchModel extends Equatable {
   final String id;
   final String? tournamentId;
@@ -32,6 +155,8 @@ class MatchModel extends Equatable {
   final int? round;
   final int? position;
   final DateTime createdAt;
+  final List<Commentary> commentaries;
+  final List<PlayerStat> playerStats;
 
   const MatchModel({
     required this.id,
@@ -52,9 +177,31 @@ class MatchModel extends Equatable {
     this.round,
     this.position,
     required this.createdAt,
+    this.commentaries = const [],
+    this.playerStats = const [],
   });
 
   factory MatchModel.fromMap(String id, Map<String, dynamic> map) {
+    // Parse commentaries
+    List<Commentary> commentaries = [];
+    if (map['commentaries'] is List) {
+      commentaries = (map['commentaries'] as List)
+          .asMap()
+          .entries
+          .map((e) => Commentary.fromMap(e.key.toString(), e.value as Map<String, dynamic>))
+          .toList();
+    }
+
+    // Parse player stats
+    List<PlayerStat> playerStats = [];
+    if (map['playerStats'] is List) {
+      playerStats = (map['playerStats'] as List)
+          .asMap()
+          .entries
+          .map((e) => PlayerStat.fromMap(e.key.toString(), e.value as Map<String, dynamic>))
+          .toList();
+    }
+
     return MatchModel(
       id: id,
       tournamentId: map['tournamentId'],
@@ -76,6 +223,8 @@ class MatchModel extends Equatable {
       round: map['round'],
       position: map['position'],
       createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      commentaries: commentaries,
+      playerStats: playerStats,
     );
   }
 
@@ -108,6 +257,8 @@ class MatchModel extends Equatable {
       if (round != null) 'round': round,
       if (position != null) 'position': position,
       'createdAt': Timestamp.fromDate(createdAt),
+      'commentaries': commentaries.map((c) => c.toMap()).toList(),
+      'playerStats': playerStats.map((ps) => ps.toMap()).toList(),
     };
   }
 
@@ -130,6 +281,8 @@ class MatchModel extends Equatable {
     int? round,
     int? position,
     DateTime? createdAt,
+    List<Commentary>? commentaries,
+    List<PlayerStat>? playerStats,
   }) {
     return MatchModel(
       id: id ?? this.id,
@@ -150,6 +303,8 @@ class MatchModel extends Equatable {
       round: round ?? this.round,
       position: position ?? this.position,
       createdAt: createdAt ?? this.createdAt,
+      commentaries: commentaries ?? this.commentaries,
+      playerStats: playerStats ?? this.playerStats,
     );
   }
 
@@ -173,5 +328,7 @@ class MatchModel extends Equatable {
         round,
         position,
         createdAt,
+        commentaries,
+        playerStats,
       ];
 }

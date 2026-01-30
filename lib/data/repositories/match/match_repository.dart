@@ -246,4 +246,77 @@ class MatchRepository {
     
     return enrichedMatches;
   }
+
+  // Add Commentary to Match
+  Future<void> addCommentary(String matchId, Commentary commentary) async {
+    final matchDoc = await _firebaseService.getMatchDoc(matchId).get();
+    if (!matchDoc.exists) return;
+
+    final matchData = matchDoc.data() as Map<String, dynamic>;
+    final commentaries = List<Map<String, dynamic>>.from(
+      (matchData['commentaries'] as List?) ?? [],
+    );
+
+    commentaries.add(commentary.toMap());
+
+    await _firebaseService.getMatchDoc(matchId).update({
+      'commentaries': commentaries,
+    });
+  }
+
+  // Update Player Stats
+  Future<void> updatePlayerStats(String matchId, PlayerStat playerStat) async {
+    final matchDoc = await _firebaseService.getMatchDoc(matchId).get();
+    if (!matchDoc.exists) return;
+
+    final matchData = matchDoc.data() as Map<String, dynamic>;
+    final playerStatsList = List<Map<String, dynamic>>.from(
+      (matchData['playerStats'] as List?) ?? [],
+    );
+
+    // Check if player already exists, if yes update, else add
+    final existingIndex = playerStatsList.indexWhere(
+      (ps) => ps['playerName'] == playerStat.playerName,
+    );
+
+    if (existingIndex != -1) {
+      playerStatsList[existingIndex] = playerStat.toMap();
+    } else {
+      playerStatsList.add(playerStat.toMap());
+    }
+
+    await _firebaseService.getMatchDoc(matchId).update({
+      'playerStats': playerStatsList,
+    });
+  }
+
+  // Get Player Stats for Match
+  Future<List<PlayerStat>> getPlayerStats(String matchId) async {
+    final matchDoc = await _firebaseService.getMatchDoc(matchId).get();
+    if (!matchDoc.exists) return [];
+
+    final matchData = matchDoc.data() as Map<String, dynamic>;
+    final playerStatsData = matchData['playerStats'] as List? ?? [];
+
+    return playerStatsData
+        .asMap()
+        .entries
+        .map((e) => PlayerStat.fromMap(e.key.toString(), e.value as Map<String, dynamic>))
+        .toList();
+  }
+
+  // Get Commentaries for Match
+  Future<List<Commentary>> getCommentaries(String matchId) async {
+    final matchDoc = await _firebaseService.getMatchDoc(matchId).get();
+    if (!matchDoc.exists) return [];
+
+    final matchData = matchDoc.data() as Map<String, dynamic>;
+    final commentariesData = matchData['commentaries'] as List? ?? [];
+
+    return commentariesData
+        .asMap()
+        .entries
+        .map((e) => Commentary.fromMap(e.key.toString(), e.value as Map<String, dynamic>))
+        .toList();
+  }
 }
