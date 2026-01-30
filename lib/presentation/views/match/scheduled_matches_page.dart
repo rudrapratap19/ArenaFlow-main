@@ -158,16 +158,26 @@ class _ScheduledMatchesPageState extends State<ScheduledMatchesPage>
               }
               await Future.delayed(const Duration(seconds: 1));
             },
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: state.matches.length,
-              itemBuilder: (context, index) {
-                final match = state.matches[index];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: _buildMatchCard(match),
-                );
-              },
+            color: AppColors.primary,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.grey[50]!,
+                    Colors.white,
+                  ],
+                ),
+              ),
+              child: ListView.builder(
+                padding: const EdgeInsets.all(20),
+                itemCount: state.matches.length,
+                itemBuilder: (context, index) {
+                  final match = state.matches[index];
+                  return _buildMatchCard(match);
+                },
+              ),
             ),
           );
         } else if (state is MatchError) {
@@ -239,276 +249,436 @@ class _ScheduledMatchesPageState extends State<ScheduledMatchesPage>
   }
 
   Widget _buildMatchCard(MatchModel match) {
-    return ModernCard(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => MatchDetailsPage(match: match),
+    final sportColor = Helpers.getSportColor(match.sport);
+    final isLive = match.status.toLowerCase() == 'live';
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          colors: [
+            Colors.white,
+            sportColor.withOpacity(0.02),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: sportColor.withOpacity(0.1),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
           ),
-        );
-      },
-      child: Column(
-        children: [
-          // Header with sport and status
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Helpers.getSportColor(match.sport).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: Helpers.getSportColor(match.sport).withOpacity(0.3),
-                    width: 1,
-                  ),
-                ),
-                child: Row(
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => MatchDetailsPage(match: match),
+              ),
+            );
+          },
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: sportColor.withOpacity(0.2),
+                width: 1.5,
+              ),
+            ),
+            child: Column(
+              children: [
+                // Header Row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Icon(
-                      Helpers.getSportIcon(match.sport),
-                      size: 16,
-                      color: Helpers.getSportColor(match.sport),
+                    // Sport Badge
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [sportColor, sportColor.withOpacity(0.8)],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: sportColor.withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Helpers.getSportIcon(match.sport),
+                            size: 16,
+                            color: Colors.white,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            match.sport.toUpperCase(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 11,
+                              letterSpacing: 1,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(width: 6),
-                    Text(
-                      match.sport.toUpperCase(),
-                      style: TextStyle(
-                        color: Helpers.getSportColor(match.sport),
-                        fontWeight: FontWeight.w700,
-                        fontSize: 11,
-                        letterSpacing: 0.5,
+                    
+                    // Status and Menu
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: isLive 
+                                ? AppColors.liveGreen 
+                                : match.status.toLowerCase() == 'completed'
+                                    ? Colors.grey
+                                    : AppColors.scheduledOrange,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (isLive)
+                                Container(
+                                  width: 6,
+                                  height: 6,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              if (isLive) const SizedBox(width: 6),
+                              Text(
+                                match.status.toUpperCase(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        PopupMenuButton<String>(
+                          onSelected: (value) {
+                            if (value == 'edit') {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => MatchDetailsPage(match: match),
+                                ),
+                              );
+                            } else if (value == 'delete') {
+                              _showDeleteConfirmation(match);
+                            }
+                          },
+                          itemBuilder: (BuildContext context) => [
+                            const PopupMenuItem(
+                              value: 'edit',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.edit_rounded, size: 18, color: AppColors.primary),
+                                  SizedBox(width: 8),
+                                  Text('Edit Match'),
+                                ],
+                              ),
+                            ),
+                            const PopupMenuItem(
+                              value: 'delete',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.delete_rounded, size: 18, color: AppColors.error),
+                                  SizedBox(width: 8),
+                                  Text('Delete', style: TextStyle(color: AppColors.error)),
+                                ],
+                              ),
+                            ),
+                          ],
+                          icon: Icon(Icons.more_vert_rounded, size: 22, color: Colors.grey[600]),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 24),
+                
+                // Teams Row
+                Row(
+                  children: [
+                    // Team 1
+                    Expanded(
+                      child: Column(
+                        children: [
+                          Container(
+                            width: 70,
+                            height: 70,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  sportColor.withOpacity(0.15),
+                                  sportColor.withOpacity(0.05),
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: sportColor.withOpacity(0.3),
+                                width: 2,
+                              ),
+                            ),
+                            child: Center(
+                              child: Text(
+                                Helpers.getInitials(match.team1Name),
+                                style: TextStyle(
+                                  color: sportColor,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 24,
+                                  letterSpacing: 1,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            match.team1Name,
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              color: Colors.black87,
+                              height: 1.2,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: match.winnerId == match.team1Id 
+                                  ? AppColors.success.withOpacity(0.1)
+                                  : Colors.grey[100],
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: match.winnerId == match.team1Id
+                                    ? AppColors.success
+                                    : Colors.grey[300]!,
+                                width: 2,
+                              ),
+                            ),
+                            child: Text(
+                              match.team1Score.toString(),
+                              style: TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.w900,
+                                color: match.winnerId == match.team1Id
+                                    ? AppColors.success
+                                    : Colors.black87,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    // VS Divider
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: sportColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: sportColor.withOpacity(0.3),
+                                width: 2,
+                              ),
+                            ),
+                            child: Text(
+                              'VS',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 14,
+                                color: sportColor,
+                                letterSpacing: 2,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    // Team 2
+                    Expanded(
+                      child: Column(
+                        children: [
+                          Container(
+                            width: 70,
+                            height: 70,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  sportColor.withOpacity(0.15),
+                                  sportColor.withOpacity(0.05),
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                color: sportColor.withOpacity(0.3),
+                                width: 2,
+                              ),
+                            ),
+                            child: Center(
+                              child: Text(
+                                Helpers.getInitials(match.team2Name),
+                                style: TextStyle(
+                                  color: sportColor,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 24,
+                                  letterSpacing: 1,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            match.team2Name,
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              color: Colors.black87,
+                              height: 1.2,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: match.winnerId == match.team2Id 
+                                  ? AppColors.success.withOpacity(0.1)
+                                  : Colors.grey[100],
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: match.winnerId == match.team2Id
+                                    ? AppColors.success
+                                    : Colors.grey[300]!,
+                                width: 2,
+                              ),
+                            ),
+                            child: Text(
+                              match.team2Score.toString(),
+                              style: TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.w900,
+                                color: match.winnerId == match.team2Id
+                                    ? AppColors.success
+                                    : Colors.black87,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-              ),
-              Row(
-                children: [
-                  StatusBadge(status: match.status),
-                  const SizedBox(width: 8),
-                  PopupMenuButton<String>(
-                    onSelected: (value) {
-                      if (value == 'edit') {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => MatchDetailsPage(match: match),
+                
+                const SizedBox(height: 20),
+                
+                // Divider
+                Divider(color: Colors.grey[300], thickness: 1),
+                
+                const SizedBox(height: 12),
+                
+                // Match Info Footer
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Expanded(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.calendar_today_rounded,
+                            size: 16,
+                            color: sportColor,
                           ),
-                        );
-                      } else if (value == 'delete') {
-                        _showDeleteConfirmation(match);
-                      }
-                    },
-                    itemBuilder: (BuildContext context) => [
-                      const PopupMenuItem(
-                        value: 'edit',
-                        child: Row(
-                          children: [
-                            Icon(Icons.edit_rounded, size: 18),
-                            SizedBox(width: 8),
-                            Text('Edit'),
-                          ],
-                        ),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              Helpers.formatDateTime(match.scheduledTime),
+                              style: TextStyle(
+                                color: Colors.grey[700],
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
-                      const PopupMenuItem(
-                        value: 'delete',
+                    ),
+                    if (match.venue.isNotEmpty) ...[
+                      Container(
+                        width: 1,
+                        height: 20,
+                        color: Colors.grey[300],
+                      ),
+                      Expanded(
                         child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.delete_rounded, size: 18, color: AppColors.error),
-                            SizedBox(width: 8),
-                            Text('Delete', style: TextStyle(color: AppColors.error)),
+                            Icon(
+                              Icons.location_on_rounded,
+                              size: 16,
+                              color: sportColor,
+                            ),
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                match.venue,
+                                style: TextStyle(
+                                  color: Colors.grey[700],
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
                           ],
                         ),
                       ),
                     ],
-                    icon: const Icon(Icons.more_vert_rounded, size: 20),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-
-          // Teams and scores
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Team 1
-              Expanded(
-                child: Column(
-                  children: [
-                    Container(
-                      width: 56,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        color: Helpers.getSportColor(match.sport).withOpacity(0.1),
-                        border: Border.all(
-                          color: Helpers.getSportColor(match.sport).withOpacity(0.3),
-                          width: 2,
-                        ),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Center(
-                        child: Text(
-                          Helpers.getInitials(match.team1Name),
-                          style: TextStyle(
-                            color: Helpers.getSportColor(match.sport),
-                            fontWeight: FontWeight.w800,
-                            fontSize: 18,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      match.team1Name,
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      match.team1Score.toString(),
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w800,
-                        color: match.winnerId == match.team1Id
-                            ? AppColors.success
-                            : AppColors.textPrimary,
-                      ),
-                    ),
                   ],
                 ),
-              ),
-
-              // VS Separator
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Column(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceLight,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Text(
-                        'VS',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                          letterSpacing: 1,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Team 2
-              Expanded(
-                child: Column(
-                  children: [
-                    Container(
-                      width: 56,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        color: Helpers.getSportColor(match.sport).withOpacity(0.1),
-                        border: Border.all(
-                          color: Helpers.getSportColor(match.sport).withOpacity(0.3),
-                          width: 2,
-                        ),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Center(
-                        child: Text(
-                          Helpers.getInitials(match.team2Name),
-                          style: TextStyle(
-                            color: Helpers.getSportColor(match.sport),
-                            fontWeight: FontWeight.w800,
-                            fontSize: 18,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      match.team2Name,
-                      textAlign: TextAlign.center,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      match.team2Score.toString(),
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.w800,
-                        color: match.winnerId == match.team2Id
-                            ? AppColors.success
-                            : AppColors.textPrimary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-
-          // Match info footer
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceLight,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.calendar_today_rounded, size: 14, color: AppColors.textSecondary),
-                const SizedBox(width: 6),
-                Text(
-                  Helpers.formatDateTime(match.scheduledTime),
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                if (match.venue.isNotEmpty) ...[
-                  const SizedBox(width: 16),
-                  Icon(Icons.location_on_rounded, size: 14, color: AppColors.textSecondary),
-                  const SizedBox(width: 6),
-                  Flexible(
-                    child: Text(
-                      match.venue,
-                      style: const TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
