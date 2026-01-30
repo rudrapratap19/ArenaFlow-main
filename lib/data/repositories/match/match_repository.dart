@@ -33,22 +33,25 @@ class MatchRepository {
   Stream<List<MatchModel>> getAllMatches() {
     return _firebaseService.matchesCollection
         .snapshots()
-        .map((snapshot) {
+        .asyncMap((snapshot) async {
       final regularMatches = snapshot.docs
           .map((doc) =>
               MatchModel.fromMap(doc.id, doc.data() as Map<String, dynamic>))
           .toList();
 
-      return Future.wait([
+      final results = await Future.wait([
         _getTournamentMatchesSnapshot(),
-      ]).then((results) {
-        final tournamentMatches = results[0] as List<MatchModel>;
-        final allMatches = [...regularMatches, ...tournamentMatches];
-        // Sort in memory after fetching
-        allMatches.sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
-        return allMatches;
-      });
-    }).asyncMap((future) => future);
+      ]);
+      final tournamentMatches = results[0] as List<MatchModel>;
+      final allMatches = [...regularMatches, ...tournamentMatches];
+      
+      // Enrich with team names
+      final enrichedMatches = await _enrichMatchesWithTeamNames(allMatches);
+      
+      // Sort in memory after fetching
+      enrichedMatches.sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
+      return enrichedMatches;
+    });
   }
 
   // Get Live Matches (includes both regular and tournament matches)
@@ -56,19 +59,22 @@ class MatchRepository {
     return _firebaseService.matchesCollection
         .where('status', isEqualTo: 'Live')
         .snapshots()
-        .map((snapshot) {
+        .asyncMap((snapshot) async {
       final regularMatches = snapshot.docs
           .map((doc) =>
               MatchModel.fromMap(doc.id, doc.data() as Map<String, dynamic>))
           .toList();
 
-      return Future.wait([
+      final results = await Future.wait([
         _getTournamentMatchesByStatus('Live'),
-      ]).then((results) {
-        final tournamentMatches = results[0] as List<MatchModel>;
-        return [...regularMatches, ...tournamentMatches];
-      });
-    }).asyncMap((future) => future);
+      ]);
+      final tournamentMatches = results[0] as List<MatchModel>;
+      final allMatches = [...regularMatches, ...tournamentMatches];
+      
+      // Enrich with team names
+      final enrichedMatches = await _enrichMatchesWithTeamNames(allMatches);
+      return enrichedMatches;
+    });
   }
 
   // Get Scheduled Matches (includes both regular and tournament matches)
@@ -76,22 +82,25 @@ class MatchRepository {
     return _firebaseService.matchesCollection
         .where('status', isEqualTo: 'Scheduled')
         .snapshots()
-        .map((snapshot) {
+        .asyncMap((snapshot) async {
       final regularMatches = snapshot.docs
           .map((doc) =>
               MatchModel.fromMap(doc.id, doc.data() as Map<String, dynamic>))
           .toList();
 
-      return Future.wait([
+      final results = await Future.wait([
         _getTournamentMatchesByStatus('Scheduled'),
-      ]).then((results) {
-        final tournamentMatches = results[0] as List<MatchModel>;
-        final allMatches = [...regularMatches, ...tournamentMatches];
-        // Sort in memory after fetching
-        allMatches.sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
-        return allMatches;
-      });
-    }).asyncMap((future) => future);
+      ]);
+      final tournamentMatches = results[0] as List<MatchModel>;
+      final allMatches = [...regularMatches, ...tournamentMatches];
+      
+      // Enrich with team names
+      final enrichedMatches = await _enrichMatchesWithTeamNames(allMatches);
+      
+      // Sort in memory after fetching
+      enrichedMatches.sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
+      return enrichedMatches;
+    });
   }
 
   // Update Match
@@ -143,14 +152,18 @@ class MatchRepository {
     return _firebaseService.matchesCollection
         .where('sport', isEqualTo: sport)
         .snapshots()
-        .map((snapshot) {
+        .asyncMap((snapshot) async {
       final matches = snapshot.docs
           .map((doc) =>
               MatchModel.fromMap(doc.id, doc.data() as Map<String, dynamic>))
           .toList();
+      
+      // Enrich with team names
+      final enrichedMatches = await _enrichMatchesWithTeamNames(matches);
+      
       // Sort in memory after fetching
-      matches.sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
-      return matches;
+      enrichedMatches.sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
+      return enrichedMatches;
     });
   }
 
@@ -191,5 +204,46 @@ class MatchRepository {
     // Sort in memory after fetching
     matches.sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
     return matches;
+  }
+
+  // Helper: Enrich matches with team names from teams collection
+  Future<List<MatchModel>> _enrichMatchesWithTeamNames(List<MatchModel> matches) async {
+    final enrichedMatches = <MatchModel>[];
+    
+    for (var match in matches) {
+      String team1Name = match.team1Name;
+      String team2Name = match.team2Name;
+      
+      // If team names are empty, try to fetch them from the teams collection
+      if (team1Name.isEmpty && match.team1Id.isNotEmpty) {
+        try {
+          final doc = await _firebaseService.getTeamDoc(match.team1Id).get();
+          if (doc.exists) {
+            team1Name = doc.get('name') ?? match.team1Id;
+          }
+        } catch (e) {
+          team1Name = match.team1Id;
+        }
+      }
+      
+      if (team2Name.isEmpty && match.team2Id.isNotEmpty) {
+        try {
+          final doc = await _firebaseService.getTeamDoc(match.team2Id).get();
+          if (doc.exists) {
+            team2Name = doc.get('name') ?? match.team2Id;
+          }
+        } catch (e) {
+          team2Name = match.team2Id;
+        }
+      }
+      
+      // Create a new match with the enriched names
+      enrichedMatches.add(match.copyWith(
+        team1Name: team1Name,
+        team2Name: team2Name,
+      ));
+    }
+    
+    return enrichedMatches;
   }
 }

@@ -152,32 +152,33 @@ class Helpers {
   static Color generateUniqueColor(String input) {
     if (input.isEmpty) return AppColors.primary;
     
-    // Hash the string to get a consistent color
-    int hash = 0;
+    // Better hash function using a more distributed approach
+    int hash = 5381;
     for (int i = 0; i < input.length; i++) {
-      hash = ((hash << 5) - hash) + input.codeUnitAt(i);
-      hash = hash & hash; // Convert to 32bit integer
+      hash = ((hash << 5) + hash) + input.codeUnitAt(i);
     }
     
     final colors = [
-      const Color(0xFF6C5CE7), // Purple
-      const Color(0xFF0984E3), // Blue
-      const Color(0xFF00B894), // Green
-      const Color(0xFFE17055), // Orange
-      const Color(0xFF6C3483), // Dark Purple
-      const Color(0xFF1E8449), // Dark Green
-      const Color(0xFFC0392B), // Red
-      const Color(0xFF2980B9), // Dark Blue
-      const Color(0xFFF39C12), // Golden
-      const Color(0xFFE74C3C), // Coral
-      const Color(0xFF8E44AD), // Violet
-      const Color(0xFF2C3E50), // Dark Slate
-      const Color(0xFF27AE60), // Medium Green
-      const Color(0xFFE67E22), // Dark Orange
-      const Color(0xFF3498DB), // Light Blue
+      const Color(0xFF6C5CE7), // Vibrant Purple
+      const Color(0xFF0984E3), // Bright Blue
+      const Color(0xFF00B894), // Fresh Green
+      const Color(0xFFE17055), // Warm Orange
+      const Color(0xFF6C3483), // Deep Purple
+      const Color(0xFF1E8449), // Forest Green
+      const Color(0xFFC0392B), // Bold Red
+      const Color(0xFF2980B9), // Deep Blue
+      const Color(0xFFF39C12), // Golden Yellow
+      const Color(0xFFE74C3C), // Coral Red
+      const Color(0xFF8E44AD), // Royal Violet
+      const Color(0xFF16A085), // Teal
+      const Color(0xFFC23B22), // Dark Coral
+      const Color(0xFF27AE60), // Green
+      const Color(0xFF2E86AB), // Steel Blue
     ];
     
-    return colors[hash.abs() % colors.length];
+    // Use absolute value and modulo for safe indexing
+    final index = (hash.abs() % colors.length);
+    return colors[index];
   }
 
   // Generate gradient from team name
