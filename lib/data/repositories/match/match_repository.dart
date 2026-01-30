@@ -32,7 +32,6 @@ class MatchRepository {
   // Get All Matches (includes both regular and tournament matches)
   Stream<List<MatchModel>> getAllMatches() {
     return _firebaseService.matchesCollection
-        .orderBy('scheduledTime', descending: false)
         .snapshots()
         .map((snapshot) {
       final regularMatches = snapshot.docs
@@ -45,6 +44,7 @@ class MatchRepository {
       ]).then((results) {
         final tournamentMatches = results[0] as List<MatchModel>;
         final allMatches = [...regularMatches, ...tournamentMatches];
+        // Sort in memory after fetching
         allMatches.sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
         return allMatches;
       });
@@ -75,7 +75,6 @@ class MatchRepository {
   Stream<List<MatchModel>> getScheduledMatches() {
     return _firebaseService.matchesCollection
         .where('status', isEqualTo: 'Scheduled')
-        .orderBy('scheduledTime', descending: false)
         .snapshots()
         .map((snapshot) {
       final regularMatches = snapshot.docs
@@ -88,6 +87,7 @@ class MatchRepository {
       ]).then((results) {
         final tournamentMatches = results[0] as List<MatchModel>;
         final allMatches = [...regularMatches, ...tournamentMatches];
+        // Sort in memory after fetching
         allMatches.sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
         return allMatches;
       });
@@ -142,12 +142,16 @@ class MatchRepository {
   Stream<List<MatchModel>> getMatchesBySport(String sport) {
     return _firebaseService.matchesCollection
         .where('sport', isEqualTo: sport)
-        .orderBy('scheduledTime', descending: false)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) =>
-                MatchModel.fromMap(doc.id, doc.data() as Map<String, dynamic>))
-            .toList());
+        .map((snapshot) {
+      final matches = snapshot.docs
+          .map((doc) =>
+              MatchModel.fromMap(doc.id, doc.data() as Map<String, dynamic>))
+          .toList();
+      // Sort in memory after fetching
+      matches.sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
+      return matches;
+    });
   }
 
   // Create Multiple Matches (Batch)
@@ -165,23 +169,27 @@ class MatchRepository {
   // Helper: Get all tournament matches
   Future<List<MatchModel>> _getTournamentMatchesSnapshot() async {
     final snapshot = await _firebaseService.tournamentMatchesCollection
-        .orderBy('scheduledTime', descending: false)
         .get();
-    return snapshot.docs
+    final matches = snapshot.docs
         .map((doc) =>
             MatchModel.fromMap(doc.id, doc.data() as Map<String, dynamic>))
         .toList();
+    // Sort in memory after fetching
+    matches.sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
+    return matches;
   }
 
   // Helper: Get tournament matches by status
   Future<List<MatchModel>> _getTournamentMatchesByStatus(String status) async {
     final snapshot = await _firebaseService.tournamentMatchesCollection
         .where('status', isEqualTo: status)
-        .orderBy('scheduledTime', descending: false)
         .get();
-    return snapshot.docs
+    final matches = snapshot.docs
         .map((doc) =>
             MatchModel.fromMap(doc.id, doc.data() as Map<String, dynamic>))
         .toList();
+    // Sort in memory after fetching
+    matches.sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
+    return matches;
   }
 }
