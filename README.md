@@ -777,15 +777,7 @@ flutter build apk --release
 flutter build appbundle --release
 ```
 
-### iOS
 
-```bash
-# Build for iOS
-flutter build ios --release
-
-# Create IPA
-flutter build ipa --release
-```
 
 ### Web
 
@@ -796,50 +788,7 @@ flutter build web --release
 
 ---
 
-## 🤝 Contributing
 
-Contributions are welcome! Please follow these steps:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-### Code Style
-
-- Follow [Effective Dart](https://dart.dev/guides/language/effective-dart) guidelines
-- Use `flutter analyze` to check for issues
-- Format code with `flutter format .`
-
----
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 👥 Authors
-
-- **Your Name** - *Initial work* - [YourGitHub](https://github.com/yourusername)
-
----
-
-## 🙏 Acknowledgments
-
-- Flutter team for the amazing framework
-- Firebase for backend services
-- BLoC library contributors
-- All open-source contributors
-
----
-
-## 📞 Support
-
-For support, email support@arenaflow.com or open an issue in the repository.
-
----
 
 ## 🗺️ Roadmap
 
