@@ -122,6 +122,7 @@ firestore.rules
 firestore.indexes.json
 storage.rules
 database.rules.json
+firebase.json
 
 # Environment variables
 .env

@@ -16,18 +16,18 @@ import 'presentation/blocs/team/team_bloc.dart';
 import 'presentation/blocs/tournament/tournament_bloc.dart';
 import 'presentation/blocs/match/match_bloc.dart';
 import 'presentation/blocs/theme/theme_cubit.dart';
-import 'firebase_options.dart'; // Make sure this import exists
+import 'firebase_options.dart'; 
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   try {
-    // Initialize Firebase
+    
     await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform, // Add this line
+      options: DefaultFirebaseOptions.currentPlatform, 
     );
     
-    // Initialize Local Storage
+    
     await LocalStorageService().init();
     
     runApp(const ArenaFlowApp());
