@@ -251,6 +251,8 @@ class _ScheduledMatchesPageState extends State<ScheduledMatchesPage>
   Widget _buildMatchCard(MatchModel match) {
     final sportColor = Helpers.getSportColor(match.sport);
     final isLive = match.status.toLowerCase() == 'live';
+    final team1Color = Helpers.generateUniqueColor(match.team1Name);
+    final team2Color = Helpers.generateUniqueColor(match.team2Name);
     
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -259,16 +261,17 @@ class _ScheduledMatchesPageState extends State<ScheduledMatchesPage>
         gradient: LinearGradient(
           colors: [
             Colors.white,
-            sportColor.withOpacity(0.02),
+            Colors.white.withOpacity(0.95),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         boxShadow: [
           BoxShadow(
-            color: sportColor.withOpacity(0.1),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
+            color: sportColor.withOpacity(0.15),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+            spreadRadius: 2,
           ),
         ],
       ),
@@ -289,7 +292,7 @@ class _ScheduledMatchesPageState extends State<ScheduledMatchesPage>
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: sportColor.withOpacity(0.2),
+                color: sportColor.withOpacity(0.15),
                 width: 1.5,
               ),
             ),
@@ -426,37 +429,38 @@ class _ScheduledMatchesPageState extends State<ScheduledMatchesPage>
                     Expanded(
                       child: Column(
                         children: [
+                          // Circular Avatar
                           Container(
-                            width: 70,
-                            height: 70,
+                            width: 80,
+                            height: 80,
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
-                                colors: [
-                                  sportColor.withOpacity(0.15),
-                                  sportColor.withOpacity(0.05),
-                                ],
+                                colors: [team1Color, team1Color.withOpacity(0.8)],
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                               ),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: sportColor.withOpacity(0.3),
-                                width: 2,
-                              ),
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: team1Color.withOpacity(0.4),
+                                  blurRadius: 15,
+                                  offset: const Offset(0, 5),
+                                ),
+                              ],
                             ),
                             child: Center(
                               child: Text(
                                 Helpers.getInitials(match.team1Name),
-                                style: TextStyle(
-                                  color: sportColor,
+                                style: const TextStyle(
+                                  color: Colors.white,
                                   fontWeight: FontWeight.w900,
-                                  fontSize: 24,
+                                  fontSize: 28,
                                   letterSpacing: 1,
                                 ),
                               ),
                             ),
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 14),
                           Text(
                             match.team1Name,
                             textAlign: TextAlign.center,
@@ -464,22 +468,22 @@ class _ScheduledMatchesPageState extends State<ScheduledMatchesPage>
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
-                              fontSize: 15,
+                              fontSize: 14,
                               color: Colors.black87,
                               height: 1.2,
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 10),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             decoration: BoxDecoration(
                               color: match.winnerId == match.team1Id 
-                                  ? AppColors.success.withOpacity(0.1)
+                                  ? team1Color.withOpacity(0.15)
                                   : Colors.grey[100],
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: match.winnerId == match.team1Id
-                                    ? AppColors.success
+                                    ? team1Color
                                     : Colors.grey[300]!,
                                 width: 2,
                               ),
@@ -487,10 +491,10 @@ class _ScheduledMatchesPageState extends State<ScheduledMatchesPage>
                             child: Text(
                               match.team1Score.toString(),
                               style: TextStyle(
-                                fontSize: 32,
+                                fontSize: 36,
                                 fontWeight: FontWeight.w900,
                                 color: match.winnerId == match.team1Id
-                                    ? AppColors.success
+                                    ? team1Color
                                     : Colors.black87,
                               ),
                             ),
@@ -503,23 +507,24 @@ class _ScheduledMatchesPageState extends State<ScheduledMatchesPage>
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: sportColor.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
+                              color: Colors.grey[100],
+                              borderRadius: BorderRadius.circular(14),
                               border: Border.all(
-                                color: sportColor.withOpacity(0.3),
+                                color: Colors.grey[300]!,
                                 width: 2,
                               ),
                             ),
-                            child: Text(
+                            child: const Text(
                               'VS',
                               style: TextStyle(
                                 fontWeight: FontWeight.w900,
-                                fontSize: 14,
-                                color: sportColor,
+                                fontSize: 13,
+                                color: Colors.black54,
                                 letterSpacing: 2,
                               ),
                             ),
@@ -532,37 +537,38 @@ class _ScheduledMatchesPageState extends State<ScheduledMatchesPage>
                     Expanded(
                       child: Column(
                         children: [
+                          // Circular Avatar
                           Container(
-                            width: 70,
-                            height: 70,
+                            width: 80,
+                            height: 80,
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
-                                colors: [
-                                  sportColor.withOpacity(0.15),
-                                  sportColor.withOpacity(0.05),
-                                ],
+                                colors: [team2Color, team2Color.withOpacity(0.8)],
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                               ),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: sportColor.withOpacity(0.3),
-                                width: 2,
-                              ),
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: team2Color.withOpacity(0.4),
+                                  blurRadius: 15,
+                                  offset: const Offset(0, 5),
+                                ),
+                              ],
                             ),
                             child: Center(
                               child: Text(
                                 Helpers.getInitials(match.team2Name),
-                                style: TextStyle(
-                                  color: sportColor,
+                                style: const TextStyle(
+                                  color: Colors.white,
                                   fontWeight: FontWeight.w900,
-                                  fontSize: 24,
+                                  fontSize: 28,
                                   letterSpacing: 1,
                                 ),
                               ),
                             ),
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 14),
                           Text(
                             match.team2Name,
                             textAlign: TextAlign.center,
@@ -570,22 +576,22 @@ class _ScheduledMatchesPageState extends State<ScheduledMatchesPage>
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
-                              fontSize: 15,
+                              fontSize: 14,
                               color: Colors.black87,
                               height: 1.2,
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 10),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                             decoration: BoxDecoration(
                               color: match.winnerId == match.team2Id 
-                                  ? AppColors.success.withOpacity(0.1)
+                                  ? team2Color.withOpacity(0.15)
                                   : Colors.grey[100],
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: match.winnerId == match.team2Id
-                                    ? AppColors.success
+                                    ? team2Color
                                     : Colors.grey[300]!,
                                 width: 2,
                               ),
@@ -593,10 +599,10 @@ class _ScheduledMatchesPageState extends State<ScheduledMatchesPage>
                             child: Text(
                               match.team2Score.toString(),
                               style: TextStyle(
-                                fontSize: 32,
+                                fontSize: 36,
                                 fontWeight: FontWeight.w900,
                                 color: match.winnerId == match.team2Id
-                                    ? AppColors.success
+                                    ? team2Color
                                     : Colors.black87,
                               ),
                             ),

@@ -147,4 +147,45 @@ class Helpers {
     
     return '${parts[0].substring(0, 1)}${parts[1].substring(0, 1)}'.toUpperCase();
   }
+
+  // Generate unique color from string (team name, etc)
+  static Color generateUniqueColor(String input) {
+    if (input.isEmpty) return AppColors.primary;
+    
+    // Hash the string to get a consistent color
+    int hash = 0;
+    for (int i = 0; i < input.length; i++) {
+      hash = ((hash << 5) - hash) + input.codeUnitAt(i);
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    
+    final colors = [
+      const Color(0xFF6C5CE7), // Purple
+      const Color(0xFF0984E3), // Blue
+      const Color(0xFF00B894), // Green
+      const Color(0xFFE17055), // Orange
+      const Color(0xFF6C3483), // Dark Purple
+      const Color(0xFF1E8449), // Dark Green
+      const Color(0xFFC0392B), // Red
+      const Color(0xFF2980B9), // Dark Blue
+      const Color(0xFFF39C12), // Golden
+      const Color(0xFFE74C3C), // Coral
+      const Color(0xFF8E44AD), // Violet
+      const Color(0xFF2C3E50), // Dark Slate
+      const Color(0xFF27AE60), // Medium Green
+      const Color(0xFFE67E22), // Dark Orange
+      const Color(0xFF3498DB), // Light Blue
+    ];
+    
+    return colors[hash.abs() % colors.length];
+  }
+
+  // Generate gradient from team name
+  static List<Color> generateUniqueGradient(String input) {
+    final baseColor = generateUniqueColor(input);
+    return [
+      baseColor,
+      baseColor.withOpacity(0.7),
+    ];
+  }
 }
