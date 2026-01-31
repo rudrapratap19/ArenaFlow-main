@@ -271,7 +271,11 @@ class _AdminPanelState extends State<AdminPanel>
         'subtitle': 'Create & manage teams',
         'icon': Icons.groups,
         'color': AppColors.accent,
-        'onTap': () => Navigator.pushNamed(context, AppRouter.teamsList),
+        'onTap': () => Navigator.pushNamed(
+          context, 
+          AppRouter.teamsList,
+          arguments: AppConstants.sportFootball,
+        ),
       },
       {
         'title': 'All Tournaments',

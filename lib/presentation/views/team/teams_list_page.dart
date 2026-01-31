@@ -56,18 +56,32 @@ class _TeamsListPageState extends State<TeamsListPage>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: CustomAppBar(
-        title: 'Teams',
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.pushNamed(context, AppRouter.addTeam);
-        },
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Add Team'),
-      ),
-      body: Column(
+    return BlocListener<TeamBloc, TeamState>(
+      listener: (context, state) {
+        if (state is TeamOperationSuccess) {
+          Helpers.showSnackBar(context, state.message);
+          // Reload teams for current sport after successful operations
+          context.read<TeamBloc>().add(TeamLoadRequested(sport: _selectedSport));
+        } else if (state is TeamError) {
+          Helpers.showSnackBar(context, state.message);
+        }
+      },
+      child: Scaffold(
+        appBar: CustomAppBar(
+          title: 'Teams',
+        ),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () {
+            Navigator.pushNamed(
+              context, 
+              AppRouter.addTeam,
+              arguments: {'sport': _selectedSport},
+            );
+          },
+          icon: const Icon(Icons.add_rounded),
+          label: const Text('Add Team'),
+        ),
+        body: Column(
         children: [
           // Sport selector
           Container(
@@ -156,7 +170,11 @@ class _TeamsListPageState extends State<TeamsListPage>
                       iconColor: Helpers.getSportColor(_selectedSport),
                       actionLabel: 'Add Team',
                       onActionPressed: () {
-                        Navigator.pushNamed(context, AppRouter.addTeam);
+                        Navigator.pushNamed(
+                          context, 
+                          AppRouter.addTeam,
+                          arguments: {'sport': _selectedSport},
+                        );
                       },
                     );
                   }
@@ -186,7 +204,7 @@ class _TeamsListPageState extends State<TeamsListPage>
           ),
         ],
       ),
-    );
+    ));
   }
 
   Widget _buildTeamCard(dynamic team) {
@@ -283,7 +301,7 @@ class _TeamsListPageState extends State<TeamsListPage>
                 Navigator.pushNamed(
                   context,
                   AppRouter.addTeam,
-                  arguments: team,
+                  arguments: {'team': team},
                 );
               } else if (value == 'delete') {
                 _showDeleteDialog(context, team.id);

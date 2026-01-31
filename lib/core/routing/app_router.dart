@@ -61,6 +61,12 @@ class AppRouter {
         final sport = settings.arguments as String?;
         return _buildRoute(TeamsListPage(initialSport: sport));
       case addTeam:
+        if (settings.arguments is Map) {
+          final args = settings.arguments as Map;
+          final team = args['team'] as TeamModel?;
+          final sport = args['sport'] as String?;
+          return _buildRoute(AddTeamPage(team: team, initialSport: sport));
+        }
         final team = settings.arguments as TeamModel?;
         return _buildRoute(AddTeamPage(team: team));
       case teamRoster:

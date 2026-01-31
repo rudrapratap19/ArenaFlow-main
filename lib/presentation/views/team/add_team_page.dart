@@ -8,8 +8,9 @@ import '../../blocs/team/team_bloc.dart';
 
 class AddTeamPage extends StatefulWidget {
   final TeamModel? team;
+  final String? initialSport;
 
-  const AddTeamPage({super.key, this.team});
+  const AddTeamPage({super.key, this.team, this.initialSport});
 
   @override
   State<AddTeamPage> createState() => _AddTeamPageState();
@@ -30,6 +31,9 @@ class _AddTeamPageState extends State<AddTeamPage>
     if (widget.team != null) {
       _nameController.text = widget.team!.name;
       _selectedSport = widget.team!.sport;
+    } else {
+      // Use the sport passed from teams list page
+      _selectedSport = widget.initialSport ?? AppConstants.sportFootball;
     }
 
     _controller = AnimationController(
