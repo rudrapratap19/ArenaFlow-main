@@ -36,22 +36,9 @@ class _TournamentDetailsPageState extends State<TournamentDetailsPage> {
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.account_tree),
-            onPressed: () => Navigator.pushNamed(
-              context,
-              AppRouter.bracketView,
-              arguments: t,
-            ),
-            tooltip: 'View Bracket',
-          ),
-          IconButton(
-            icon: const Icon(Icons.leaderboard),
-            onPressed: () => Navigator.pushNamed(
-              context,
-              AppRouter.standings,
-              arguments: t,
-            ),
-            tooltip: 'View Standings',
+            icon: const Icon(Icons.delete_outline),
+            tooltip: 'Delete Tournament',
+            onPressed: () => _confirmDeleteTournament(context, t),
           ),
         ],
       ),
@@ -65,7 +52,18 @@ class _TournamentDetailsPageState extends State<TournamentDetailsPage> {
         icon: const Icon(Icons.add),
         label: const Text('Add Match'),
       ),
-      body: BlocBuilder<TournamentBloc, TournamentState>(
+      body: BlocConsumer<TournamentBloc, TournamentState>(
+        listener: (context, state) {
+          if (state is TournamentOperationSuccess && mounted) {
+            final message = state.message.toLowerCase();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message)),
+            );
+            if (message.contains('deleted')) {
+              Navigator.pop(context, true);
+            }
+          }
+        },
         builder: (context, state) {
           if (state is TournamentLoading) {
             return Center(
@@ -143,7 +141,53 @@ class _TournamentDetailsPageState extends State<TournamentDetailsPage> {
     );
   }
 
+  Future<void> _confirmDeleteTournament(
+    BuildContext context,
+    TournamentModel tournament,
+  ) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Delete Tournament?'),
+          content: Text(
+            'This will delete "${tournament.name}" and all its matches. This action cannot be undone.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldDelete == true && mounted) {
+      context
+          .read<TournamentBloc>()
+          .add(TournamentDeleteRequested(tournamentId: tournament.id));
+    }
+  }
+
   Widget _buildTournamentHeader(TournamentModel t) {
+    // Format tournament type with spaces
+    String formattedType = t.type
+        .toString()
+        .split('.')
+        .last
+        .replaceAllMapped(RegExp(r'([A-Z])'), (match) => ' ${match.group(1)}')
+        .trim()
+        .toUpperCase();
+    
     final statusColor = _getStatusColor(t.status.toString().split('.').last);
     final statusText = _getStatusText(t.status);
 
@@ -155,12 +199,13 @@ class _TournamentDetailsPageState extends State<TournamentDetailsPage> {
           end: Alignment.bottomRight,
         ),
       ),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: Column(
@@ -169,27 +214,36 @@ class _TournamentDetailsPageState extends State<TournamentDetailsPage> {
                     Text(
                       t.name,
                       style: const TextStyle(
-                        fontSize: 24,
+                        fontSize: 28,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      t.type.toString().split('.').last.toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.white.withOpacity(0.8),
-                        fontWeight: FontWeight.w500,
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        formattedType,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.5,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
+              const SizedBox(width: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
                   color: statusColor,
                   borderRadius: BorderRadius.circular(20),
@@ -205,7 +259,7 @@ class _TournamentDetailsPageState extends State<TournamentDetailsPage> {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 24),
           Row(
             children: [
               Expanded(
@@ -277,159 +331,197 @@ class _TournamentDetailsPageState extends State<TournamentDetailsPage> {
     final isLive = m.status == 'In Progress';
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        onTap: () => Navigator.pushNamed(
-          context,
-          AppRouter.matchDetails,
-          arguments: m,
-        ),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          m.matchType?.toString().split('.').last.toUpperCase() ?? 'MATCH',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          Helpers.formatDateTime(m.scheduledTime),
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey[700],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: statusColor,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Text(
-                      m.status,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Text(
-                          m.team1Name,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if (m.team1Score != null) ...[
-                          const SizedBox(height: 6),
-                          Text(
-                            '${m.team1Score}',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        ]
-                      ],
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Column(
-                      children: [
-                        const Text(
-                          'VS',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey,
-                          ),
-                        ),
-                        if (isLive) ...[
-                          const SizedBox(height: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppColors.liveGreen.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: const Text(
-                              'LIVE',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.liveGreen,
-                              ),
-                            ),
-                          ),
-                        ]
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Text(
-                          m.team2Name,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if (m.team2Score != null) ...[
-                          const SizedBox(height: 6),
-                          Text(
-                            '${m.team2Score}',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        ]
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: AppColors.primary.withOpacity(0.12),
+            width: 1,
+          ),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.white,
+              Colors.grey[50]!,
             ],
           ),
         ),
-      ),
-    );
+        child: InkWell(
+          onTap: () => Navigator.pushNamed(
+            context,
+            AppRouter.matchDetails,
+            arguments: m,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                // Header with type and status
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            m.matchType?.toString().split('.').last.toUpperCase() ?? 'MATCH',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.schedule,
+                                size: 16,
+                                color: Colors.grey[500],
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                Helpers.formatDateTime(m.scheduledTime),
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[700],
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: statusColor,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        m.status,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                // Divider
+                Container(
+                  height: 1,
+                  color: Colors.grey[200],
+                ),
+                const SizedBox(height: 18),
+                // Match teams and scores
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                            m.team1Name,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                              letterSpacing: 0.3,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '${m.team1Score}',
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Column(
+                        children: [
+                          const Text(
+                            'VS',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          if (isLive) ...[
+                            const SizedBox(height: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColors.liveGreen.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Text(
+                                'LIVE',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.liveGreen,
+                                ),
+                              ),
+                            ),
+                          ]
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                            m.team2Name,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                              letterSpacing: 0.3,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '${m.team2Score}',
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ));
   }
 
   Color _getStatusColor(String status) {

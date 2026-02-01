@@ -71,12 +71,16 @@ class _TeamsListPageState extends State<TeamsListPage>
           title: 'Teams',
         ),
         floatingActionButton: FloatingActionButton.extended(
-          onPressed: () {
-            Navigator.pushNamed(
+          onPressed: () async {
+            final result = await Navigator.pushNamed(
               context, 
               AppRouter.addTeam,
               arguments: {'sport': _selectedSport},
             );
+            // Reload teams if a team was added
+            if (result == true && mounted) {
+              context.read<TeamBloc>().add(TeamLoadRequested(sport: _selectedSport));
+            }
           },
           icon: const Icon(Icons.add_rounded),
           label: const Text('Add Team'),
@@ -169,12 +173,16 @@ class _TeamsListPageState extends State<TeamsListPage>
                       subtitle: 'Create your first team to get started. Tap the + button below.',
                       iconColor: Helpers.getSportColor(_selectedSport),
                       actionLabel: 'Add Team',
-                      onActionPressed: () {
-                        Navigator.pushNamed(
+                      onActionPressed: () async {
+                        final result = await Navigator.pushNamed(
                           context, 
                           AppRouter.addTeam,
                           arguments: {'sport': _selectedSport},
                         );
+                        // Reload teams if a team was added
+                        if (result == true && mounted) {
+                          context.read<TeamBloc>().add(TeamLoadRequested(sport: _selectedSport));
+                        }
                       },
                     );
                   }
@@ -211,12 +219,16 @@ class _TeamsListPageState extends State<TeamsListPage>
     final sportColor = Helpers.getSportColor(team.sport);
     
     return ModernCard(
-      onTap: () {
-        Navigator.pushNamed(
+      onTap: () async {
+        await Navigator.pushNamed(
           context,
           AppRouter.teamRoster,
           arguments: team,
         );
+        // Always reload teams when returning from roster to refresh player counts
+        if (mounted) {
+          context.read<TeamBloc>().add(TeamLoadRequested(sport: _selectedSport));
+        }
       },
       child: Row(
         children: [
@@ -296,13 +308,17 @@ class _TeamsListPageState extends State<TeamsListPage>
                 ),
               ),
             ],
-            onSelected: (value) {
+            onSelected: (value) async {
               if (value == 'edit') {
-                Navigator.pushNamed(
+                final result = await Navigator.pushNamed(
                   context,
                   AppRouter.addTeam,
                   arguments: {'team': team},
                 );
+                // Reload teams if team was edited
+                if (result == true && mounted) {
+                  context.read<TeamBloc>().add(TeamLoadRequested(sport: _selectedSport));
+                }
               } else if (value == 'delete') {
                 _showDeleteDialog(context, team.id);
               }

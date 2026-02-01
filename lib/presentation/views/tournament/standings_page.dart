@@ -234,13 +234,14 @@ class _StandingsPageState extends State<StandingsPage> {
                   Expanded(
                     flex: 2,
                     child: Text(
-                      row['teamId']?.toString() ?? 'Team ${index + 1}',
+                      row['teamName']?.toString() ?? 'Team ${index + 1}',
                       style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: isTopThree ? FontWeight.w600 : FontWeight.w500,
+                        fontSize: 14,
+                        fontWeight: isTopThree ? FontWeight.w700 : FontWeight.w600,
                         color: Colors.black87,
+                        letterSpacing: 0.3,
                       ),
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),

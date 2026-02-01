@@ -6,6 +6,7 @@ class TeamModel extends Equatable {
   final String name;
   final String sport;
   final DateTime createdAt;
+  final String createdBy;
   final int playerCount;
 
   const TeamModel({
@@ -13,6 +14,7 @@ class TeamModel extends Equatable {
     required this.name,
     required this.sport,
     required this.createdAt,
+    required this.createdBy,
     this.playerCount = 0,
   });
 
@@ -22,6 +24,7 @@ class TeamModel extends Equatable {
       name: map['name'] ?? '',
       sport: map['sport'] ?? '',
       createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      createdBy: map['createdBy'] ?? '',
       playerCount: map['playerCount'] ?? 0,
     );
   }
@@ -31,6 +34,7 @@ class TeamModel extends Equatable {
       'name': name,
       'sport': sport,
       'createdAt': Timestamp.fromDate(createdAt),
+      'createdBy': createdBy,
       'playerCount': playerCount,
     };
   }
@@ -40,6 +44,7 @@ class TeamModel extends Equatable {
     String? name,
     String? sport,
     DateTime? createdAt,
+    String? createdBy,
     int? playerCount,
   }) {
     return TeamModel(
@@ -47,10 +52,11 @@ class TeamModel extends Equatable {
       name: name ?? this.name,
       sport: sport ?? this.sport,
       createdAt: createdAt ?? this.createdAt,
+      createdBy: createdBy ?? this.createdBy,
       playerCount: playerCount ?? this.playerCount,
     );
   }
 
   @override
-  List<Object?> get props => [id, name, sport, createdAt, playerCount];
+  List<Object?> get props => [id, name, sport, createdAt, createdBy, playerCount];
 }

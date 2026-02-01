@@ -4,6 +4,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../data/models/team/team_model.dart';
+import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/team/team_bloc.dart';
 
 class AddTeamPage extends StatefulWidget {
@@ -62,11 +63,18 @@ class _AddTeamPageState extends State<AddTeamPage>
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
+      final authState = context.read<AuthBloc>().state;
+      String currentUserId = '';
+      if (authState is AuthAuthenticated) {
+        currentUserId = authState.user.uid;
+      }
+
       final team = TeamModel(
         id: widget.team?.id ?? '',
         name: _nameController.text.trim(),
         sport: _selectedSport,
         createdAt: widget.team?.createdAt ?? DateTime.now(),
+        createdBy: widget.team?.createdBy ?? currentUserId,
         playerCount: widget.team?.playerCount ?? 0,
       );
 

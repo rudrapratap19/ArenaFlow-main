@@ -22,9 +22,15 @@ class TeamRepository {
     return TeamModel.fromMap(doc.id, doc.data() as Map<String, dynamic>);
   }
 
-  // Get Teams by Sport
+  // Get Teams by Sport - filtered by current user
   Stream<List<TeamModel>> getTeamsBySport(String sport) {
+    final currentUserId = _firebaseService.currentUserId;
+    if (currentUserId == null) {
+      return Stream.value([]);
+    }
+
     return _firebaseService.teamsCollection
+        .where('createdBy', isEqualTo: currentUserId)
         .where('sport', isEqualTo: sport)
         .snapshots()
         .map((snapshot) => snapshot.docs
@@ -32,14 +38,24 @@ class TeamRepository {
             .toList());
   }
 
-  // Get All Teams
+  // Get All Teams - filtered by current user
   Stream<List<TeamModel>> getAllTeams() {
+    final currentUserId = _firebaseService.currentUserId;
+    if (currentUserId == null) {
+      return Stream.value([]);
+    }
+
     return _firebaseService.teamsCollection
-        .orderBy('createdAt', descending: true)
+        .where('createdBy', isEqualTo: currentUserId)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => TeamModel.fromMap(doc.id, doc.data() as Map<String, dynamic>))
-            .toList());
+        .map((snapshot) {
+          final teams = snapshot.docs
+              .map((doc) => TeamModel.fromMap(doc.id, doc.data() as Map<String, dynamic>))
+              .toList();
+          // Sort in memory
+          teams.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          return teams;
+        });
   }
 
   // Update Team
@@ -79,14 +95,24 @@ class TeamRepository {
   }
 
   Stream<List<PlayerModel>> getTeamPlayers(String teamId) {
+    final currentUserId = _firebaseService.currentUserId;
+    if (currentUserId == null) {
+      return Stream.value([]);
+    }
+
     return _firebaseService.playersCollection
         .where('teamId', isEqualTo: teamId)
-        .orderBy('createdAt', descending: false)
+        .where('createdBy', isEqualTo: currentUserId)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) =>
-                PlayerModel.fromMap(doc.id, doc.data() as Map<String, dynamic>))
-            .toList());
+        .map((snapshot) {
+          final players = snapshot.docs
+              .map((doc) =>
+                  PlayerModel.fromMap(doc.id, doc.data() as Map<String, dynamic>))
+              .toList();
+          // Sort in memory
+          players.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+          return players;
+        });
   }
 
   Future<void> updatePlayer(PlayerModel player) async {

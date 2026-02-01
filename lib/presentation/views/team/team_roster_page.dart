@@ -25,37 +25,52 @@ class _TeamRosterPageState extends State<TeamRosterPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.team.name),
-        backgroundColor: Colors.blue, // Changed from transparent
-        foregroundColor: Colors.white,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: () {
-              Navigator.pushNamed(
-                context,
-                AppRouter.addTeam,
-                arguments: widget.team,
-              );
-            },
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.pushNamed(
-            context,
-            AppRouter.addPlayer,
-            arguments: widget.team.id,
-          );
-        },
-        backgroundColor: Helpers.getSportColor(widget.team.sport),
-        icon: const Icon(Icons.person_add),
-        label: const Text('Add Player'),
-      ),
+    return BlocListener<TeamBloc, TeamState>(
+      listener: (context, state) {
+        if (state is TeamOperationSuccess) {
+          Helpers.showSnackBar(context, state.message);
+          // Reload players after successful operation
+          context.read<TeamBloc>().add(PlayerLoadRequested(teamId: widget.team.id));
+        }
+        if (state is TeamError) {
+          Helpers.showSnackBar(context, state.message);
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(widget.team.name),
+          backgroundColor: Colors.blue, // Changed from transparent
+          foregroundColor: Colors.white,
+          elevation: 0,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.edit),
+              onPressed: () async {
+                await Navigator.pushNamed(
+                  context,
+                  AppRouter.addTeam,
+                  arguments: widget.team,
+                );
+              },
+            ),
+          ],
+        ),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () async {
+            final result = await Navigator.pushNamed(
+              context,
+              AppRouter.addPlayer,
+              arguments: widget.team.id,
+            );
+            // Reload players if player was added
+            if (result == true && mounted) {
+              context.read<TeamBloc>().add(PlayerLoadRequested(teamId: widget.team.id));
+            }
+          },
+          backgroundColor: Helpers.getSportColor(widget.team.sport),
+          icon: const Icon(Icons.person_add),
+          label: const Text('Add Player'),
+        ),
       body: Column(
         children: [
           // Team header
@@ -189,7 +204,7 @@ class _TeamRosterPageState extends State<TeamRosterPage> {
           ),
         ],
       ),
-    );
+    ));
   }
 
   Widget _buildPlayerCard(PlayerModel player) {
@@ -308,13 +323,17 @@ class _TeamRosterPageState extends State<TeamRosterPage> {
                     ),
                   ),
                 ],
-                onSelected: (value) {
+                onSelected: (value) async {
                   if (value == 'edit') {
-                    Navigator.pushNamed(
+                    final result = await Navigator.pushNamed(
                       context,
                       AppRouter.addPlayer,
                       arguments: {'teamId': widget.team.id, 'player': player},
                     );
+                    // Reload players if player was updated
+                    if (result == true && mounted) {
+                      context.read<TeamBloc>().add(PlayerLoadRequested(teamId: widget.team.id));
+                    }
                   } else if (value == 'delete') {
                     _showDeleteDialog(context, player);
                   }

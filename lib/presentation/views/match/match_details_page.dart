@@ -36,6 +36,12 @@ class _MatchDetailsPageState extends State<MatchDetailsPage> {
         .add(MatchLoadByIdRequested(matchId: widget.match.id));
   }
 
+  Future<void> _refreshMatch() async {
+    context.read<MatchBloc>().add(MatchLoadByIdRequested(matchId: widget.match.id));
+    
+    await Future.delayed(const Duration(milliseconds: 500));
+  }
+
   void _initializeFields() {
     _score1Controller.text = widget.match.team1Score.toString();
     _score2Controller.text = widget.match.team2Score.toString();
@@ -74,6 +80,7 @@ class _MatchDetailsPageState extends State<MatchDetailsPage> {
       round: currentMatch.round,
       position: currentMatch.position,
       createdAt: currentMatch.createdAt,
+      createdBy: currentMatch.createdBy,
     );
 
     context.read<MatchBloc>().add(MatchUpdateRequested(match: updatedMatch));
@@ -150,24 +157,30 @@ class _MatchDetailsPageState extends State<MatchDetailsPage> {
 
           return Form(
             key: _formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  // Header Section with Gradient
-                  Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: Helpers.getSportGradient(match.sport),
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+            child: RefreshIndicator(
+              onRefresh: _refreshMatch,
+              color: AppColors.primary,
+              backgroundColor: Colors.white,
+              displacement: 40,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: Column(
+                  children: [
+                    // Header Section with Gradient
+                    Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: Helpers.getSportGradient(match.sport),
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
                       ),
-                    ),
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      children: [
-                        // Sport Icon
-                        Container(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        children: [
+                          // Sport Icon
+                          Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.2),
@@ -553,6 +566,7 @@ class _MatchDetailsPageState extends State<MatchDetailsPage> {
                   const SizedBox(height: 24),
                 ],
               ),
+            ),
             ),
           );
         },

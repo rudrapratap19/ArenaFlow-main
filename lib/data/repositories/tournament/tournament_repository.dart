@@ -23,15 +23,44 @@ class TournamentRepository {
     return TournamentModel.fromMap(doc.id, doc.data() as Map<String, dynamic>);
   }
 
-  // Get All Tournaments
+  // Get All Tournaments - filtered by current user
   Stream<List<TournamentModel>> getAllTournaments() {
+    final currentUserId = _firebaseService.currentUserId;
+    if (currentUserId == null) {
+      return Stream.value([]);
+    }
+
     return _firebaseService.tournamentsCollection
-        .orderBy('createdAt', descending: true)
+        .where('createdBy', isEqualTo: currentUserId)
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) => TournamentModel.fromMap(
-                doc.id, doc.data() as Map<String, dynamic>))
-            .toList());
+        .map((snapshot) {
+          final tournaments = snapshot.docs
+              .map((doc) => TournamentModel.fromMap(
+                  doc.id, doc.data() as Map<String, dynamic>))
+              .toList();
+          // Sort in memory
+          tournaments.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          return tournaments;
+        });
+  }
+
+  // Get All Tournaments for a specific admin
+  Stream<List<TournamentModel>> getAllTournamentsByAdmin(String adminId) {
+    if (adminId.isEmpty) {
+      return Stream.value([]);
+    }
+
+    return _firebaseService.tournamentsCollection
+        .where('createdBy', isEqualTo: adminId)
+        .snapshots()
+        .map((snapshot) {
+          final tournaments = snapshot.docs
+              .map((doc) => TournamentModel.fromMap(
+                  doc.id, doc.data() as Map<String, dynamic>))
+              .toList();
+          tournaments.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          return tournaments;
+        });
   }
 
   // Update Tournament
@@ -46,8 +75,15 @@ class TournamentRepository {
         .where('tournamentId', isEqualTo: tournamentId)
         .get();
 
+    final linkedMatches = await _firebaseService.matchesCollection
+        .where('tournamentId', isEqualTo: tournamentId)
+        .get();
+
     final batch = _firebaseService.firestore.batch();
     for (var doc in matches.docs) {
+      batch.delete(doc.reference);
+    }
+    for (var doc in linkedMatches.docs) {
       batch.delete(doc.reference);
     }
     batch.delete(_firebaseService.getTournamentDoc(tournamentId));
@@ -122,6 +158,7 @@ class TournamentRepository {
             'venue': 'TBD',
             'scheduledTime': Timestamp.now(),
             'createdAt': Timestamp.now(),
+            'createdBy': _firebaseService.currentUserId ?? '',
           };
           
           final matchRef = _firebaseService.tournamentMatchesCollection.doc();
@@ -164,6 +201,7 @@ class TournamentRepository {
         'venue': 'TBD',
         'scheduledTime': Timestamp.now(),
         'createdAt': Timestamp.now(),
+        'createdBy': _firebaseService.currentUserId ?? '',
       });
     }
 
@@ -192,6 +230,7 @@ class TournamentRepository {
           'venue': 'TBD',
           'scheduledTime': Timestamp.now(),
           'createdAt': Timestamp.now(),
+          'createdBy': _firebaseService.currentUserId ?? '',
         };
 
         final matchRef = _firebaseService.tournamentMatchesCollection.doc();
@@ -225,10 +264,49 @@ class TournamentRepository {
         .orderBy('round')
         .orderBy('position')
         .snapshots()
-        .map((snapshot) => snapshot.docs
-            .map((doc) =>
-                MatchModel.fromMap(doc.id, doc.data() as Map<String, dynamic>))
-            .toList());
+        .asyncMap((snapshot) async {
+          final matches = <MatchModel>[];
+          
+          for (var doc in snapshot.docs) {
+            final data = doc.data() as Map<String, dynamic>;
+            var team1Name = data['team1Name'] ?? '';
+            var team2Name = data['team2Name'] ?? '';
+            
+            // Fetch team names from teams collection if not present
+            if (team1Name.isEmpty && data['team1Id'] != null) {
+              try {
+                final teamDoc = await _firebaseService.getTeamDoc(data['team1Id']).get();
+                if (teamDoc.exists) {
+                  final teamData = teamDoc.data() as Map<String, dynamic>;
+                  team1Name = teamData['name'] ?? '';
+                }
+              } catch (e) {
+                // Keep empty if fetch fails
+              }
+            }
+            
+            if (team2Name.isEmpty && data['team2Id'] != null) {
+              try {
+                final teamDoc = await _firebaseService.getTeamDoc(data['team2Id']).get();
+                if (teamDoc.exists) {
+                  final teamData = teamDoc.data() as Map<String, dynamic>;
+                  team2Name = teamData['name'] ?? '';
+                }
+              } catch (e) {
+                // Keep empty if fetch fails
+              }
+            }
+            
+            // Update the data map with fetched names
+            final updatedData = Map<String, dynamic>.from(data);
+            if (team1Name.isNotEmpty) updatedData['team1Name'] = team1Name;
+            if (team2Name.isNotEmpty) updatedData['team2Name'] = team2Name;
+            
+            matches.add(MatchModel.fromMap(doc.id, updatedData));
+          }
+          
+          return matches;
+        });
   }
 
   // Update Match Result
@@ -270,16 +348,45 @@ class TournamentRepository {
         .get();
 
     Map<String, Map<String, dynamic>> standings = {};
+    Map<String, String> teamNames = {};
 
+    // First pass - collect all team IDs
+    for (var doc in matches.docs) {
+      final match = doc.data() as Map<String, dynamic>;
+      final team1Id = match['team1Id'];
+      final team2Id = match['team2Id'];
+      if (!teamNames.containsKey(team1Id)) teamNames[team1Id] = '';
+      if (!teamNames.containsKey(team2Id)) teamNames[team2Id] = '';
+    }
+
+    // Fetch team names from teams collection
+    for (final teamId in teamNames.keys) {
+      try {
+        final teamDoc = await _firebaseService.getTeamDoc(teamId).get();
+        if (teamDoc.exists) {
+          final teamData = teamDoc.data() as Map<String, dynamic>;
+          teamNames[teamId] = teamData['name'] ?? teamId;
+        } else {
+          teamNames[teamId] = teamId;
+        }
+      } catch (e) {
+        teamNames[teamId] = teamId;
+      }
+    }
+
+    // Second pass - process matches and build standings
     for (var doc in matches.docs) {
       final match = doc.data() as Map<String, dynamic>;
       final team1Id = match['team1Id'];
       final team2Id = match['team2Id'];
       final team1Score = match['team1Score'] ?? 0;
       final team2Score = match['team2Score'] ?? 0;
+      final team1Name = teamNames[team1Id] ?? team1Id;
+      final team2Name = teamNames[team2Id] ?? team2Id;
 
       standings.putIfAbsent(team1Id, () => {
         'teamId': team1Id,
+        'teamName': team1Name,
         'played': 0,
         'won': 0,
         'drawn': 0,
@@ -292,6 +399,7 @@ class TournamentRepository {
 
       standings.putIfAbsent(team2Id, () => {
         'teamId': team2Id,
+        'teamName': team2Name,
         'played': 0,
         'won': 0,
         'drawn': 0,

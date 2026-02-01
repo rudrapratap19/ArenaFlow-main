@@ -48,33 +48,47 @@ class _ScheduledMatchesPageState extends State<ScheduledMatchesPage>
         children: [
           Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              gradient: LinearGradient(
+                colors: [Colors.white, Colors.grey[50]!],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 20,
+                  offset: const Offset(0, 4),
+                  spreadRadius: 2,
                 ),
               ],
             ),
             child: TabBar(
               controller: _tabController,
-              labelColor: AppColors.primary,
+              labelColor: Colors.white,
               unselectedLabelColor: AppColors.textSecondary,
-              indicatorColor: AppColors.primary,
-              indicatorWeight: 3,
+              indicator: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
+                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(4)),
+              ),
+              indicatorSize: TabBarIndicatorSize.tab,
+              indicatorWeight: 4,
               labelStyle: const TextStyle(
                 fontWeight: FontWeight.bold,
-                fontSize: 13,
+                fontSize: 14,
+                letterSpacing: 0.5,
               ),
               unselectedLabelStyle: const TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 13,
               ),
               tabs: const [
-                Tab(text: 'All', icon: Icon(Icons.list_rounded)),
-                Tab(text: 'Live', icon: Icon(Icons.play_circle_rounded)),
-                Tab(text: 'Scheduled', icon: Icon(Icons.schedule_rounded)),
+                Tab(text: 'All', icon: Icon(Icons.list_rounded, size: 22)),
+                Tab(text: 'Live', icon: Icon(Icons.play_circle_rounded, size: 22)),
+                Tab(text: 'Scheduled', icon: Icon(Icons.schedule_rounded, size: 22)),
               ],
               onTap: (index) {
                 if (index == 0) {
@@ -100,11 +114,29 @@ class _ScheduledMatchesPageState extends State<ScheduledMatchesPage>
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.pushNamed(context, AppRouter.matchMaking);
+        onPressed: () async {
+          final result = await Navigator.pushNamed(context, AppRouter.matchMaking);
+          // Reload matches if one was created
+          if (result == true && mounted) {
+            context.read<MatchBloc>().add(MatchLoadAllRequested());
+          }
         },
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('New Match'),
+        icon: const Icon(Icons.add_rounded, size: 24),
+        label: const Text(
+          'New Match',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 15,
+            letterSpacing: 0.5,
+          ),
+        ),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        elevation: 6,
+        highlightElevation: 12,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
       ),
     );
   }
@@ -112,6 +144,39 @@ class _ScheduledMatchesPageState extends State<ScheduledMatchesPage>
   Widget _buildMatchesList() {
     return BlocBuilder<MatchBloc, MatchState>(
       builder: (context, state) {
+        if (state is MatchOperationSuccess || state is MatchInitial) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            final currentTab = _tabController.index;
+            if (currentTab == 0) {
+              context.read<MatchBloc>().add(MatchLoadAllRequested());
+            } else if (currentTab == 1) {
+              context.read<MatchBloc>().add(MatchLoadLiveRequested());
+            } else {
+              context.read<MatchBloc>().add(MatchLoadScheduledRequested());
+            }
+          });
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(
+                  color: AppColors.primary,
+                  strokeWidth: 3,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Loading matches...',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
         if (state is MatchLoading) {
           return Center(
             child: Column(
@@ -140,8 +205,12 @@ class _ScheduledMatchesPageState extends State<ScheduledMatchesPage>
               title: 'No Matches Found',
               subtitle: 'There are no matches at this time. Create a new match to get started.',
               actionLabel: 'Create Match',
-              onActionPressed: () {
-                Navigator.pushNamed(context, AppRouter.matchMaking);
+              onActionPressed: () async {
+                final result = await Navigator.pushNamed(context, AppRouter.matchMaking);
+                // Reload matches if one was created
+                if (result == true && mounted) {
+                  context.read<MatchBloc>().add(MatchLoadAllRequested());
+                }
               },
             );
           }
@@ -255,45 +324,65 @@ class _ScheduledMatchesPageState extends State<ScheduledMatchesPage>
     final team2Color = Helpers.generateUniqueColor(match.team2Name);
     
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         gradient: LinearGradient(
           colors: [
             Colors.white,
-            Colors.white.withOpacity(0.95),
+            isLive ? AppColors.liveGreen.withOpacity(0.02) : Colors.grey[50]!,
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         boxShadow: [
           BoxShadow(
-            color: sportColor.withOpacity(0.1),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-            spreadRadius: 1,
+            color: isLive 
+                ? AppColors.liveGreen.withOpacity(0.15)
+                : sportColor.withOpacity(0.12),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+            spreadRadius: 2,
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () {
-            Navigator.push(
+          onTap: () async {
+            await Navigator.push(
               context,
               MaterialPageRoute(
                 builder: (context) => MatchDetailsPage(match: match),
               ),
             );
+            if (!mounted) return;
+            final currentTab = _tabController.index;
+            if (currentTab == 0) {
+              context.read<MatchBloc>().add(MatchLoadAllRequested());
+            } else if (currentTab == 1) {
+              context.read<MatchBloc>().add(MatchLoadLiveRequested());
+            } else {
+              context.read<MatchBloc>().add(MatchLoadScheduledRequested());
+            }
           },
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
+          splashColor: sportColor.withOpacity(0.1),
+          highlightColor: sportColor.withOpacity(0.05),
           child: Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: sportColor.withOpacity(0.1),
-                width: 1,
+                color: isLive 
+                    ? AppColors.liveGreen.withOpacity(0.3)
+                    : sportColor.withOpacity(0.15),
+                width: 1.5,
               ),
             ),
             child: Column(
@@ -304,17 +393,20 @@ class _ScheduledMatchesPageState extends State<ScheduledMatchesPage>
                   children: [
                     // Sport Badge
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [sportColor, sportColor.withOpacity(0.8)],
+                          colors: [sportColor, sportColor.withOpacity(0.75)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
                         ),
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: sportColor.withOpacity(0.2),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
+                            color: sportColor.withOpacity(0.4),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                            spreadRadius: 1,
                           ),
                         ],
                       ),
@@ -344,14 +436,27 @@ class _ScheduledMatchesPageState extends State<ScheduledMatchesPage>
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: isLive 
-                                ? AppColors.liveGreen 
-                                : match.status.toLowerCase() == 'completed'
-                                    ? Colors.grey
-                                    : AppColors.scheduledOrange,
-                            borderRadius: BorderRadius.circular(16),
+                            gradient: LinearGradient(
+                              colors: isLive 
+                                  ? [AppColors.liveGreen, AppColors.liveGreen.withOpacity(0.8)]
+                                  : match.status.toLowerCase() == 'completed'
+                                      ? [Colors.grey[600]!, Colors.grey[500]!]
+                                      : [AppColors.scheduledOrange, AppColors.scheduledOrange.withOpacity(0.8)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: isLive 
+                                    ? AppColors.liveGreen.withOpacity(0.3)
+                                    : Colors.black.withOpacity(0.1),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -441,29 +546,45 @@ class _ScheduledMatchesPageState extends State<ScheduledMatchesPage>
                               color: Colors.black87,
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 10),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                             decoration: BoxDecoration(
-                              color: match.winnerId == match.team1Id 
-                                  ? team1Color.withOpacity(0.15)
-                                  : Colors.grey[100],
-                              borderRadius: BorderRadius.circular(10),
+                              gradient: match.winnerId == match.team1Id 
+                                  ? LinearGradient(
+                                      colors: [team1Color.withOpacity(0.2), team1Color.withOpacity(0.1)],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    )
+                                  : LinearGradient(
+                                      colors: [Colors.grey[100]!, Colors.grey[50]!],
+                                    ),
+                              borderRadius: BorderRadius.circular(14),
                               border: Border.all(
                                 color: match.winnerId == match.team1Id
                                     ? team1Color
                                     : Colors.grey[300]!,
-                                width: 1.5,
+                                width: 2,
                               ),
+                              boxShadow: match.winnerId == match.team1Id
+                                  ? [
+                                      BoxShadow(
+                                        color: team1Color.withOpacity(0.3),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 3),
+                                      ),
+                                    ]
+                                  : [],
                             ),
                             child: Text(
                               match.team1Score.toString(),
                               style: TextStyle(
-                                fontSize: 28,
+                                fontSize: 32,
                                 fontWeight: FontWeight.w900,
                                 color: match.winnerId == match.team1Id
                                     ? team1Color
                                     : Colors.black87,
+                                letterSpacing: 1,
                               ),
                             ),
                           ),
@@ -473,27 +594,31 @@ class _ScheduledMatchesPageState extends State<ScheduledMatchesPage>
                     
                     // VS Divider
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                             decoration: BoxDecoration(
-                              color: Colors.grey[100],
-                              borderRadius: BorderRadius.circular(8),
+                              gradient: LinearGradient(
+                                colors: [sportColor.withOpacity(0.15), sportColor.withOpacity(0.08)],
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                              ),
+                              borderRadius: BorderRadius.circular(10),
                               border: Border.all(
-                                color: Colors.grey[300]!,
-                                width: 1,
+                                color: sportColor.withOpacity(0.3),
+                                width: 1.5,
                               ),
                             ),
-                            child: const Text(
+                            child: Text(
                               'VS',
                               style: TextStyle(
-                                fontWeight: FontWeight.w800,
-                                fontSize: 11,
-                                color: Colors.black54,
-                                letterSpacing: 1.2,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 12,
+                                color: sportColor,
+                                letterSpacing: 1.5,
                               ),
                             ),
                           ),
@@ -517,29 +642,45 @@ class _ScheduledMatchesPageState extends State<ScheduledMatchesPage>
                               color: Colors.black87,
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 10),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                             decoration: BoxDecoration(
-                              color: match.winnerId == match.team2Id 
-                                  ? team2Color.withOpacity(0.15)
-                                  : Colors.grey[100],
-                              borderRadius: BorderRadius.circular(10),
+                              gradient: match.winnerId == match.team2Id 
+                                  ? LinearGradient(
+                                      colors: [team2Color.withOpacity(0.2), team2Color.withOpacity(0.1)],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    )
+                                  : LinearGradient(
+                                      colors: [Colors.grey[100]!, Colors.grey[50]!],
+                                    ),
+                              borderRadius: BorderRadius.circular(14),
                               border: Border.all(
                                 color: match.winnerId == match.team2Id
                                     ? team2Color
                                     : Colors.grey[300]!,
-                                width: 1.5,
+                                width: 2,
                               ),
+                              boxShadow: match.winnerId == match.team2Id
+                                  ? [
+                                      BoxShadow(
+                                        color: team2Color.withOpacity(0.3),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 3),
+                                      ),
+                                    ]
+                                  : [],
                             ),
                             child: Text(
                               match.team2Score.toString(),
                               style: TextStyle(
-                                fontSize: 28,
+                                fontSize: 32,
                                 fontWeight: FontWeight.w900,
                                 color: match.winnerId == match.team2Id
                                     ? team2Color
                                     : Colors.black87,
+                                letterSpacing: 1,
                               ),
                             ),
                           ),

@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/routing/app_router.dart';
-import '../../../core/utils/helpers.dart';
+import '../../../data/models/auth/user_model.dart';
 import '../../blocs/auth/auth_bloc.dart';
+import 'widgets/admin_card.dart';
+import 'widgets/empty_admins_state.dart';
+import 'widgets/user_panel_header.dart';
 
 class UserPanel extends StatefulWidget {
   const UserPanel({super.key});
@@ -17,11 +21,16 @@ class _UserPanelState extends State<UserPanel>
     with TickerProviderStateMixin {
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
+  late final Stream<QuerySnapshot<Map<String, dynamic>>> _adminsStream;
 
   @override
   void initState() {
     super.initState();
     _initAnimations();
+    _adminsStream = FirebaseFirestore.instance
+        .collection(AppConstants.usersCollection)
+        .where('role', isEqualTo: 'Admin')
+        .snapshots();
   }
 
   void _initAnimations() {
@@ -69,13 +78,20 @@ class _UserPanelState extends State<UserPanel>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('User Panel'),
-        backgroundColor: Colors.blue,
+        title: const Text(
+          'User Panel',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.logout_rounded),
             onPressed: _logout,
+            tooltip: 'Logout',
           ),
         ],
       ),
@@ -87,14 +103,36 @@ class _UserPanelState extends State<UserPanel>
         },
         child: FadeTransition(
           opacity: _fadeAnimation,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeader(),
-                const SizedBox(height: 24),
-                _buildEmptyState(),
+          child: RefreshIndicator(
+            onRefresh: () async {
+              setState(() {});
+              await Future.delayed(const Duration(milliseconds: 500));
+            },
+            color: AppColors.primary,
+            child: CustomScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: BlocBuilder<AuthBloc, AuthState>(
+                      builder: (context, state) {
+                        String userName = 'User';
+                        if (state is AuthAuthenticated) {
+                          userName = state.user.name;
+                        }
+                        return UserPanelHeader(userName: userName);
+                      },
+                    ),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+                    child: _buildSectionTitle(),
+                  ),
+                ),
+                _buildAdminsList(),
               ],
             ),
           ),
@@ -103,107 +141,80 @@ class _UserPanelState extends State<UserPanel>
     );
   }
 
-  Widget _buildHeader() {
-    return BlocBuilder<AuthBloc, AuthState>(
-      builder: (context, state) {
-        String userName = 'User';
-        if (state is AuthAuthenticated) {
-          userName = state.user.name;
-        }
-
-        return Container(
-          padding: const EdgeInsets.all(20),
+  Widget _buildSectionTitle() {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: AppColors.primaryGradient,
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
                 color: AppColors.primary.withOpacity(0.3),
-                blurRadius: 10,
-                offset: const Offset(0, 5),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
               ),
             ],
           ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.person,
-                  size: 40,
-                  color: AppColors.textWhite,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Welcome!',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: AppColors.textWhite.withOpacity(0.9),
-                          ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      userName,
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            color: AppColors.textWhite,
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+          child: const Icon(
+            Icons.supervisor_account,
+            color: Colors.white,
+            size: 22,
           ),
-        );
-      },
+        ),
+        const SizedBox(width: 14),
+        const Text(
+          'Administrators',
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 0.3,
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const SizedBox(height: 60),
-          Container(
-            padding: const EdgeInsets.all(32),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
-              shape: BoxShape.circle,
+  Widget _buildAdminsList() {
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: _adminsStream,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SliverToBoxAdapter(
+            child: Center(
+              child: Padding(
+                padding: EdgeInsets.all(40),
+                child: CircularProgressIndicator(),
+              ),
             ),
-            child: Icon(
-              Icons.sports_soccer,
-              size: 80,
-              color: AppColors.primary.withOpacity(0.5),
+          );
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const SliverToBoxAdapter(
+            child: EmptyAdminsState(),
+          );
+        }
+
+        final admins = snapshot.data!.docs
+            .map((doc) => UserModel.fromMap(doc.id, doc.data()))
+            .toList();
+        admins.sort(
+            (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+
+        return SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          sliver: SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => AdminCard(admin: admins[index]),
+              childCount: admins.length,
             ),
           ),
-          const SizedBox(height: 24),
-          Text(
-            'No Matches Yet',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Upcoming matches will appear here',
-            style: Theme.of(context).textTheme.bodyMedium,
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

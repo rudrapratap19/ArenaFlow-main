@@ -15,6 +15,7 @@ class PlayerModel extends Equatable {
   final String? experience;
   final String? statistics;
   final DateTime createdAt;
+  final String createdBy;
 
   const PlayerModel({
     required this.id,
@@ -30,6 +31,7 @@ class PlayerModel extends Equatable {
     this.experience,
     this.statistics,
     required this.createdAt,
+    required this.createdBy,
   });
 
   factory PlayerModel.fromMap(String id, Map<String, dynamic> map) {
@@ -47,6 +49,7 @@ class PlayerModel extends Equatable {
       experience: map['experience'],
       statistics: map['statistics'],
       createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      createdBy: map['createdBy'] ?? '',
     );
   }
 
@@ -64,6 +67,7 @@ class PlayerModel extends Equatable {
       if (experience != null) 'experience': experience,
       if (statistics != null) 'statistics': statistics,
       'createdAt': Timestamp.fromDate(createdAt),
+      'createdBy': createdBy,
     };
   }
 
@@ -81,6 +85,7 @@ class PlayerModel extends Equatable {
     String? experience,
     String? statistics,
     DateTime? createdAt,
+    String? createdBy,
   }) {
     return PlayerModel(
       id: id ?? this.id,
@@ -96,6 +101,7 @@ class PlayerModel extends Equatable {
       experience: experience ?? this.experience,
       statistics: statistics ?? this.statistics,
       createdAt: createdAt ?? this.createdAt,
+      createdBy: createdBy ?? this.createdBy,
     );
   }
 
@@ -114,5 +120,6 @@ class PlayerModel extends Equatable {
         experience,
         statistics,
         createdAt,
+        createdBy,
       ];
 }

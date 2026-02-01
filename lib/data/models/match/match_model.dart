@@ -155,6 +155,7 @@ class MatchModel extends Equatable {
   final int? round;
   final int? position;
   final DateTime createdAt;
+  final String createdBy;
   final List<Commentary> commentaries;
   final List<PlayerStat> playerStats;
 
@@ -177,6 +178,7 @@ class MatchModel extends Equatable {
     this.round,
     this.position,
     required this.createdAt,
+    required this.createdBy,
     this.commentaries = const [],
     this.playerStats = const [],
   });
@@ -223,6 +225,7 @@ class MatchModel extends Equatable {
       round: map['round'],
       position: map['position'],
       createdAt: (map['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      createdBy: map['createdBy'] ?? '',
       commentaries: commentaries,
       playerStats: playerStats,
     );
@@ -257,6 +260,7 @@ class MatchModel extends Equatable {
       if (round != null) 'round': round,
       if (position != null) 'position': position,
       'createdAt': Timestamp.fromDate(createdAt),
+      'createdBy': createdBy,
       'commentaries': commentaries.map((c) => c.toMap()).toList(),
       'playerStats': playerStats.map((ps) => ps.toMap()).toList(),
     };
@@ -281,6 +285,7 @@ class MatchModel extends Equatable {
     int? round,
     int? position,
     DateTime? createdAt,
+    String? createdBy,
     List<Commentary>? commentaries,
     List<PlayerStat>? playerStats,
   }) {
@@ -303,6 +308,7 @@ class MatchModel extends Equatable {
       round: round ?? this.round,
       position: position ?? this.position,
       createdAt: createdAt ?? this.createdAt,
+      createdBy: createdBy ?? this.createdBy,
       commentaries: commentaries ?? this.commentaries,
       playerStats: playerStats ?? this.playerStats,
     );
@@ -328,6 +334,7 @@ class MatchModel extends Equatable {
         round,
         position,
         createdAt,
+        createdBy,
         commentaries,
         playerStats,
       ];

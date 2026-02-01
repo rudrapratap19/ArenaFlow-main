@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/utils/helpers.dart';
 import '../../../data/models/team/player_model.dart';
+import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/team/team_bloc.dart';
 import '../../../core/constants/app_colors.dart';
 
@@ -64,6 +65,12 @@ class _AddPlayerPageState extends State<AddPlayerPage> {
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
 
+    final authState = context.read<AuthBloc>().state;
+    String currentUserId = '';
+    if (authState is AuthAuthenticated) {
+      currentUserId = authState.user.uid;
+    }
+
     final player = PlayerModel(
       id: widget.player?.id ?? '',
       teamId: widget.teamId,
@@ -96,6 +103,7 @@ class _AddPlayerPageState extends State<AddPlayerPage> {
           ? null
           : _statsController.text.trim(),
       createdAt: widget.player?.createdAt ?? DateTime.now(),
+      createdBy: widget.player?.createdBy ?? currentUserId,
     );
 
     if (widget.player == null) {

@@ -73,12 +73,12 @@ class _LiveMatchPanelState extends State<LiveMatchPanel> with SingleTickerProvid
     );
 
     _commentaryController.clear();
-    _minuteController.text = '0';
     _selectedTeam = null;
+    setState(() {}); // Trigger rebuild to reset form
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Commentary added successfully'),
+        content: Text('Commentary added successfully! Updates will appear in real-time.'),
         backgroundColor: Colors.green,
         duration: Duration(seconds: 2),
       ),

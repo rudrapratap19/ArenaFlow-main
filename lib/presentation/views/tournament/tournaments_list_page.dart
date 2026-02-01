@@ -31,8 +31,12 @@ class _TournamentsListPageState extends State<TournamentsListPage> {
         elevation: 0,
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.pushNamed(context, AppRouter.createTournament);
+        onPressed: () async {
+          final result = await Navigator.pushNamed(context, AppRouter.createTournament);
+          // Reload tournaments if one was created
+          if (result == true && mounted) {
+            context.read<TournamentBloc>().add(TournamentLoadAllRequested());
+          }
         },
         backgroundColor: AppColors.primary,
         icon: const Icon(Icons.add),
@@ -188,31 +192,6 @@ class _TournamentsListPageState extends State<TournamentsListPage> {
           ),
           const SizedBox(height: 20),
 
-          // Search bar placeholder
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.search, color: Colors.grey[400]),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Search tournaments...',
-                      border: InputBorder.none,
-                      hintStyle: TextStyle(color: Colors.grey[400]),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-
           // Section title
           const Text(
             'All Tournaments',
@@ -267,146 +246,195 @@ class _TournamentsListPageState extends State<TournamentsListPage> {
   }
 
   Widget _buildTournamentCard(TournamentModel tournament) {
-    Color statusColor;
-    String statusText;
-    IconData statusIcon;
-
-    switch (tournament.status) {
-      case TournamentStatus.registration:
-        statusColor = AppColors.scheduledOrange;
-        statusText = 'Registration Open';
-        statusIcon = Icons.how_to_reg;
-        break;
-      case TournamentStatus.inProgress:
-        statusColor = AppColors.liveGreen;
-        statusText = 'In Progress';
-        statusIcon = Icons.play_circle_filled;
-        break;
-      case TournamentStatus.completed:
-        statusColor = Colors.grey;
-        statusText = 'Completed';
-        statusIcon = Icons.check_circle;
-        break;
-    }
+    // Format tournament type with spaces (e.g., "DOUBLE ELIMINATION")
+    String formattedType = tournament.type
+        .toString()
+        .split('.')
+        .last
+        .replaceAllMapped(RegExp(r'([A-Z])'), (match) => ' ${match.group(1)}')
+        .trim()
+        .toUpperCase();
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 2,
+      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 3,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
       ),
-      child: InkWell(
-        onTap: () {
-          Navigator.pushNamed(
-            context,
-            AppRouter.tournamentDetails,
-            arguments: tournament,
-          );
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header with title and status
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          tournament.name,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          tournament.type.toString().split('.').last.toUpperCase(),
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.white,
+              Colors.grey[50]!,
+            ],
+          ),
+        ),
+        child: InkWell(
+          onTap: () async {
+            await Navigator.pushNamed(
+              context,
+              AppRouter.tournamentDetails,
+              arguments: tournament,
+            );
+            // Reload tournaments when returning from details
+            if (mounted) {
+              context.read<TournamentBloc>().add(TournamentLoadAllRequested());
+            }
+          },
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header with title and icon
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.emoji_events,
+                        color: AppColors.primary,
+                        size: 28,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: statusColor,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(statusIcon, size: 12, color: Colors.white),
-                        const SizedBox(width: 4),
-                        Text(
-                          statusText,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-
-              // Details row
-              Row(
-                children: [
-                  Expanded(
-                    child: Row(
-                      children: [
-                        Icon(Icons.calendar_today,
-                            size: 14, color: Colors.grey[500]),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            Helpers.formatDate(tournament.startDate),
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 12,
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            tournament.name,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
                             ),
+                            maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: Row(
-                      children: [
-                        Icon(Icons.groups, size: 14, color: Colors.grey[500]),
-                        const SizedBox(width: 6),
-                        Text(
-                          '${tournament.teamIds.length} Teams',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 12,
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              formattedType,
+                              style: TextStyle(
+                                color: AppColors.primary,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Divider
+                Container(
+                  height: 1,
+                  color: Colors.grey[200],
+                ),
+                const SizedBox(height: 16),
+
+                // Details row
+                Row(
+                  children: [
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.calendar_today,
+                            size: 16,
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Start Date',
+                                  style: TextStyle(
+                                    color: AppColors.textSecondary,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                Text(
+                                  Helpers.formatDate(tournament.startDate),
+                                  style: const TextStyle(
+                                    color: AppColors.textPrimary,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.groups,
+                            size: 16,
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Teams',
+                                  style: TextStyle(
+                                    color: AppColors.textSecondary,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                Text(
+                                  '${tournament.teamIds.length} ${tournament.teamIds.length == 1 ? 'Team' : 'Teams'}',
+                                  style: const TextStyle(
+                                    color: AppColors.textPrimary,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -89,11 +89,11 @@ class AppColors {
   static const Color shadowDark = Color(0x33000000);
 
   // Scheduled Color
-  static const Color scheduledOrange = Color(0xFFFF9800); // Orange shade for scheduled/registration
+  static const Color scheduledOrange = Color(0xFFFF9800); 
 
   // Live Color
-  static const Color liveGreen = Color(0xFF43A047); // Example green, adjust as needed
+  static const Color liveGreen = Color(0xFF43A047);
 
-  // Completed Color
-  static const Color completedGrey = Color(0xFF9E9E9E); // or any grey shade you prefer
+  
+  static const Color completedGrey = Color(0xFF9E9E9E); 
 }

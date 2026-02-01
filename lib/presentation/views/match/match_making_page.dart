@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../data/models/match/match_model.dart';
 import '../../../data/models/tournament/tournament_model.dart';
+import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/match/match_bloc.dart';
 import '../../blocs/match/match_event.dart';
 import '../../blocs/match/match_state.dart';
@@ -33,6 +34,13 @@ class _MatchMakingPageState extends State<MatchMakingPage> {
 
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
+    
+    final authState = context.read<AuthBloc>().state;
+    String currentUserId = '';
+    if (authState is AuthAuthenticated) {
+      currentUserId = authState.user.uid;
+    }
+
     final match = MatchModel(
       id: '',
       tournamentId: widget.tournament?.id,
@@ -45,6 +53,7 @@ class _MatchMakingPageState extends State<MatchMakingPage> {
       scheduledTime: _scheduled,
       status: 'Scheduled',
       createdAt: DateTime.now(),
+      createdBy: currentUserId,
     );
     context.read<MatchBloc>().add(MatchCreateRequested(match: match));
     Navigator.pop(context, true);
